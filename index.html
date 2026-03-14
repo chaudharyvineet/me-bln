@@ -1,0 +1,737 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Vineet Chaudhary</title>
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;500;600&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500&display=swap"
+        rel="stylesheet">
+
+    <style>
+        :root {
+            --bg-color: #FAFAFA;
+            --text-primary: #111111;
+            --text-secondary: #777777;
+            --accent: #4A5D6B;
+            /* Sophisticated deep slate blue/grey */
+
+            --font-display: 'Cormorant Garamond', serif;
+            --font-body: 'DM Sans', sans-serif;
+
+            --ease: 1.0s cubic-bezier(0.16, 1, 0.3, 1);
+            --ease-fast: 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            user-select: none;
+        }
+
+        html,
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-primary);
+            font-family: var(--font-body);
+            overflow: hidden;
+            width: 100vw;
+            height: 100vh;
+            -webkit-font-smoothing: antialiased;
+        }
+
+        #particle-canvas {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 1;
+            pointer-events: none;
+        }
+
+        /* -----------------------
+           HOME CANVAS
+           ----------------------- */
+        #home-view {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 10;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: opacity var(--ease), transform var(--ease);
+        }
+
+        #home-view.hidden {
+            opacity: 0;
+            pointer-events: none;
+            transform: scale(0.96);
+        }
+
+        .centerpiece {
+            text-align: center;
+            position: relative;
+        }
+
+        .massive-name {
+            font-family: var(--font-display);
+            font-size: clamp(4rem, 12vh, 15rem);
+            font-weight: 500;
+            line-height: 0.85;
+            letter-spacing: -0.02em;
+            color: var(--text-primary);
+            cursor: default;
+        }
+
+        .massive-name span {
+            color: var(--accent);
+            font-weight: 400;
+        }
+
+        .sub-title {
+            position: absolute;
+            bottom: -3vh;
+            right: 0;
+            font-family: var(--font-body);
+            text-transform: uppercase;
+            letter-spacing: 0.2em;
+            font-size: clamp(0.6rem, 1vh, 0.9rem);
+            color: var(--text-secondary);
+        }
+
+        /* Nav Nodes */
+        .nav-node {
+            position: absolute;
+            font-family: var(--font-display);
+            font-size: clamp(2rem, 5vh, 4rem);
+            font-weight: 400;
+            color: var(--text-secondary);
+            cursor: pointer;
+            transition: color var(--ease-fast), transform var(--ease-fast);
+            z-index: 20;
+        }
+
+        .nav-node:hover {
+            color: var(--text-primary);
+            transform: scale(1.05);
+        }
+
+        #nav-about {
+            top: 18%;
+            left: 12%;
+        }
+
+        #nav-work {
+            top: 60%;
+            right: 15%;
+        }
+
+        #nav-project {
+            top: 45%;
+            left: 8%;
+            font-size: clamp(1.8rem, 4.5vh, 3.5rem);
+        }
+
+        #nav-stack {
+            bottom: 15%;
+            left: 25%;
+        }
+
+        #nav-contact {
+            top: 22%;
+            right: 25%;
+        }
+
+        /* -----------------------
+           CONTENT POSTERS
+           ----------------------- */
+        .poster-view {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 15;
+            background-color: var(--bg-color);
+            opacity: 0;
+            pointer-events: none;
+            transform: translateY(60px);
+            transition: opacity var(--ease), transform var(--ease);
+            padding: 4vh 6vw;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            overflow: hidden;
+        }
+
+        .poster-view.active {
+            opacity: 1;
+            pointer-events: all;
+            transform: translateY(0);
+        }
+
+        .close-btn {
+            position: fixed;
+            top: 4vh;
+            right: 4vw;
+            font-family: var(--font-body);
+            font-size: 1.1rem;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            cursor: pointer;
+            color: var(--text-primary);
+            z-index: 30;
+            transition: color var(--ease-fast);
+            font-weight: 500;
+        }
+
+        .close-btn:hover {
+            color: var(--accent);
+        }
+
+        .poster-title {
+            font-family: var(--font-display);
+            font-size: 22vh;
+            font-weight: 600;
+            line-height: 0.8;
+            letter-spacing: -0.02em;
+            color: rgba(17, 17, 17, 0.03);
+            position: absolute;
+            top: 1vh;
+            left: -1vw;
+            z-index: 0;
+            pointer-events: none;
+            text-transform: capitalize;
+        }
+
+        .poster-content {
+            position: relative;
+            z-index: 1;
+            width: 100%;
+            user-select: text;
+        }
+
+        /* ABOUT */
+        .huge-text-about {
+            font-family: var(--font-display);
+            font-size: clamp(2rem, 5vh, 4rem);
+            line-height: 1.1;
+            color: var(--text-primary);
+            max-width: 85vw;
+            font-weight: 400;
+        }
+
+        .huge-text-about span {
+            color: var(--accent);
+        }
+
+        .about-sub {
+            margin-top: 4vh;
+            font-size: clamp(1rem, 2vh, 1.3rem);
+            color: var(--text-secondary);
+            max-width: 60vw;
+            line-height: 1.5;
+        }
+
+        /* WORK */
+        .work-flow {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 2vw;
+            height: 60vh;
+            align-items: center;
+        }
+
+        .work-item {
+            position: relative;
+            padding-left: 2vw;
+            border-left: 1px solid rgba(0, 0, 0, 0.1);
+        }
+
+        .work-year {
+            font-family: var(--font-body);
+            font-size: 0.8rem;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            color: var(--text-secondary);
+            margin-bottom: 1vh;
+            font-weight: 500;
+        }
+
+        .work-company {
+            font-family: var(--font-display);
+            font-size: clamp(2rem, 4vh, 3rem);
+            font-weight: 500;
+            line-height: 1;
+            margin-bottom: 0.5vh;
+        }
+
+        .work-role {
+            font-family: var(--font-body);
+            font-size: clamp(0.9rem, 1.5vh, 1.1rem);
+            color: var(--accent);
+            margin-bottom: 1.5vh;
+            font-weight: 500;
+        }
+
+        .work-desc {
+            font-family: var(--font-body);
+            font-size: clamp(0.85rem, 1.4vh, 1rem);
+            line-height: 1.5;
+            color: var(--text-primary);
+            font-weight: 300;
+        }
+
+        .edu-item {
+            margin-top: 4vh;
+            padding-top: 4vh;
+            border-top: 1px solid rgba(0, 0, 0, 0.1);
+            grid-column: span 4;
+            display: flex;
+            justify-content: space-between;
+        }
+
+        .edu-node {
+            flex: 1;
+            margin-right: 2vw;
+        }
+
+        .edu-node:last-child {
+            margin-right: 0;
+        }
+
+        /* CAPABILITIES */
+        .stack-cloud {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 3vw;
+            height: 50vh;
+            align-items: center;
+        }
+
+        .stack-cluster h3 {
+            font-family: var(--font-display);
+            font-size: clamp(1.8rem, 3.5vh, 2.5rem);
+            font-weight: 500;
+            margin-bottom: 1vh;
+            border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+            padding-bottom: 0.5vh;
+        }
+
+        .stack-cluster p {
+            font-size: clamp(0.9rem, 1.6vh, 1.1rem);
+            line-height: 1.5;
+            color: var(--text-secondary);
+            font-weight: 300;
+        }
+
+        /* PROJECT */
+        .project-layout {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 5vw;
+            align-items: center;
+        }
+
+        .project-meta {
+            font-family: var(--font-body);
+            font-size: 0.85rem;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            color: var(--accent);
+            margin-bottom: 2vh;
+            font-weight: 500;
+        }
+
+        .project-title {
+            font-family: var(--font-display);
+            font-size: clamp(3rem, 7vh, 6rem);
+            font-weight: 500;
+            line-height: 1;
+            margin-bottom: 4vh;
+            text-transform: capitalize;
+        }
+
+        .project-desc {
+            font-size: clamp(1rem, 2vh, 1.3rem);
+            line-height: 1.6;
+            max-width: 600px;
+            color: var(--text-primary);
+        }
+
+        .project-tags {
+            margin-top: 4vh;
+            display: flex;
+            gap: 1vw;
+            flex-wrap: wrap;
+        }
+
+        .tag {
+            font-family: var(--font-body);
+            background: rgba(0, 0, 0, 0.04);
+            color: var(--text-primary);
+            padding: 0.6vh 1.2vw;
+            font-size: 0.85rem;
+            text-transform: uppercase;
+            font-weight: 500;
+            letter-spacing: 0.05em;
+            border-radius: 4px;
+        }
+
+        /* CONTACT */
+        .contact-layout {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            height: 60vh;
+        }
+
+        .contact-huge-links {
+            display: flex;
+            flex-direction: column;
+            gap: 2vh;
+        }
+
+        .contact-huge-links a {
+            font-family: var(--font-display);
+            font-size: clamp(3rem, 8vh, 8rem);
+            font-weight: 400;
+            color: var(--text-primary);
+            text-decoration: none;
+            line-height: 1;
+            transition: color var(--ease-fast), padding-left var(--ease-fast);
+        }
+
+        .contact-huge-links a:hover {
+            color: var(--accent);
+            padding-left: 1vw;
+        }
+
+        .certifications {
+            font-family: var(--font-body);
+            text-align: right;
+        }
+
+        .certifications h3 {
+            font-size: 0.9rem;
+            text-transform: uppercase;
+            letter-spacing: 0.2em;
+            color: var(--text-secondary);
+            margin-bottom: 2vh;
+        }
+
+        .cert-list {
+            font-family: var(--font-display);
+            font-size: clamp(1.5rem, 3vh, 2rem);
+            color: var(--text-primary);
+            line-height: 1.2;
+        }
+
+        .cert-list span {
+            color: var(--accent);
+        }
+    </style>
+</head>
+
+<body>
+
+    <canvas id="particle-canvas"></canvas>
+
+    <!-- HOME CANVAS -->
+    <div id="home-view">
+        <div class="nav-node" id="nav-about" onclick="openNode('about')">About</div>
+        <div class="nav-node" id="nav-work" onclick="openNode('work')">Experience</div>
+        <div class="nav-node" id="nav-project" onclick="openNode('project')">Research</div>
+        <div class="nav-node" id="nav-stack" onclick="openNode('stack')">Capabilities</div>
+        <div class="nav-node" id="nav-contact" onclick="openNode('contact')">Connect</div>
+
+        <div class="centerpiece">
+            <h1 class="massive-name">Vineet<br><span>Chaudhary</span></h1>
+            <div class="sub-title">Security Engineer & Cloud Architect</div>
+        </div>
+    </div>
+
+    <div class="close-btn" id="close-btn" style="opacity: 0; pointer-events: none;" onclick="closeNodes()">Close</div>
+
+    <!-- POSTERS -->
+
+    <!-- About -->
+    <div class="poster-view" id="view-about">
+        <div class="poster-title">About</div>
+        <div class="poster-content">
+            <div class="huge-text-about">
+                I am a security engineer and cloud architect navigating <span>complex environments.</span> My day-to-day
+                involves writing Python for detection logic, managing Kubernetes clusters at scale, and designing
+                resilient monitoring pipelines.
+            </div>
+            <div class="about-sub">
+                I embed privacy controls (GDPR, SOC 2, ISO 27001, NIST) firmly into CI/CD workflows. Equally comfortable
+                leading incident response, orchestrating threat modeling sessions, or bringing infrastructure under code
+                using Terraform. Based in Berlin.
+            </div>
+        </div>
+    </div>
+
+    <!-- Work Log -->
+    <div class="poster-view" id="view-work">
+        <div class="poster-title">Experience</div>
+        <div class="poster-content">
+            <div class="work-flow">
+
+                <div class="work-item">
+                    <div class="work-year">24 — Now</div>
+                    <div class="work-company">Dolby</div>
+                    <div class="work-role">Cloud Architecture</div>
+                    <div class="work-desc">
+                        Built provisioning pipelines cutting infra costs by 70%. Wrote Conan CI integration reducing
+                        release time 15x. Set up monitoring/alerting via CloudWatch. Embedded deployment advisor for the
+                        Dolby Vision squad.
+                    </div>
+                </div>
+
+                <div class="work-item">
+                    <div class="work-year">23 — 23</div>
+                    <div class="work-company">ZS (Senior)</div>
+                    <div class="work-role">Senior Security Engineer</div>
+                    <div class="work-desc">
+                        Ran threat modeling and secure design reviews. Overhauled container security across 1,000+
+                        clusters via Sysdig/Falco. Built Lambda@Edge routing. Drove end-to-end vulnerability management
+                        reducing findings by 63%.
+                    </div>
+                </div>
+
+                <div class="work-item">
+                    <div class="work-year">21 — 23</div>
+                    <div class="work-company">ZS Associates</div>
+                    <div class="work-role">Security Engineer</div>
+                    <div class="work-desc">
+                        Centralised AWS security into a single detection platform. Built Python auto-response workflows
+                        cutting MTTR by 50%. Ran attack simulation for zero-days (Log4j). Co-designed the cloud IR plan.
+                    </div>
+                </div>
+
+                <div class="work-item">
+                    <div class="work-year">20 — 21</div>
+                    <div class="work-company">Cognizant</div>
+                    <div class="work-role">Cloud & DevOps</div>
+                    <div class="work-desc">
+                        Built infrastructure automation with Terraform and Go on Azure. Managed Azure DevOps/Jenkins
+                        CI/CD with JFrog. Designed Prometheus/Grafana monitoring.
+                    </div>
+                </div>
+
+                <!-- Education Row -->
+                <div class="edu-item">
+                    <div class="edu-node">
+                        <div class="work-year">23 — Now</div>
+                        <div class="work-company">BTU Cottbus</div>
+                        <div class="work-role">M.Sc. Cybersecurity</div>
+                        <div class="work-desc">Thesis: Evaluating Kubernetes Security Through Policy Effectiveness and
+                            Risk Correlation.</div>
+                    </div>
+                    <div class="edu-node">
+                        <div class="work-year">16 — 20</div>
+                        <div class="work-company">Chandigarh Univ</div>
+                        <div class="work-role">B.E. Computer Science</div>
+                        <div class="work-desc">Cloud Computing Specialisation (IBM).</div>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </div>
+
+    <!-- Project -->
+    <div class="poster-view" id="view-project">
+        <div class="poster-title">Research</div>
+        <div class="poster-content">
+            <div class="project-layout">
+                <div>
+                    <div class="project-meta">Academic Research Study</div>
+                    <h2 class="project-title">5G Network Anomaly Detection</h2>
+                </div>
+                <div>
+                    <div class="project-desc">
+                        Analyzed 5G network datasets to detect anomalous traffic using protocol, packet timing, and
+                        flow-level features. Implemented ML models including kNN, SVM, Random Forest, RNNs, and ResNet
+                        for network intrusion detection.
+                        <br><br>
+                        Developed sequence detection using n-gram packet modeling and federated learning with
+                        global/local models. Generated synthetic traffic with GANs and evaluated model performance.
+                    </div>
+                    <div class="project-tags">
+                        <span class="tag">Machine Learning</span>
+                        <span class="tag">Python</span>
+                        <span class="tag">GANs</span>
+                        <span class="tag">Federated Learning</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Capabilities -->
+    <div class="poster-view" id="view-stack">
+        <div class="poster-title">Capabilities</div>
+        <div class="poster-content">
+            <div class="huge-text-about"
+                style="font-size: clamp(1.5rem, 4vh, 3rem); margin-bottom: 6vh; max-width: 100%;">
+                Architectural components & <span>capabilities.</span>
+            </div>
+
+            <div class="stack-cloud">
+                <div class="stack-cluster">
+                    <h3>Cloud Architecture</h3>
+                    <p>AWS, Azure, GCP, multi-account architecture, IAM, serverless provisioning, massive networking.
+                    </p>
+                </div>
+                <div class="stack-cluster">
+                    <h3>Detection & Security</h3>
+                    <p>Threat modeling, secure design review, CSPM/CNAPP, penetration testing, SIEM, incident response
+                        telemetry.</p>
+                </div>
+                <div class="stack-cluster">
+                    <h3>Containers & K8s</h3>
+                    <p>Kubernetes (EKS, AKS, GKE), Docker, Sysdig, Falco, runtime behavior analysis, orchestration
+                        structure.</p>
+                </div>
+                <div class="stack-cluster">
+                    <h3>DevSecOps & Code</h3>
+                    <p>Advanced Python, Go, Bash, Node.js. Terraform, CloudFormation, Jenkins, GitHub Actions, JFrog.
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Contact & Certs -->
+    <div class="poster-view" id="view-contact">
+        <div class="poster-title">Connect</div>
+        <div class="poster-content contact-layout">
+            <div class="contact-huge-links">
+                <a href="mailto:vineetchaudhary131@gmail.com" target="_blank">Email</a>
+                <a href="https://www.linkedin.com/in/chaudharyvineet9/" target="_blank">LinkedIn</a>
+                <a href="https://github.com/chaudharyvineet/" target="_blank">GitHub</a>
+            </div>
+
+            <div class="certifications">
+                <h3>Select Certifications</h3>
+                <div class="cert-list">
+                    AWS Solutions Architect <span>(Assoc)</span><br>
+                    AWS Certified Security <span>(Spec)</span><br>
+                    Azure Security Engineer <span>(AZ-500)</span><br>
+                    Kubernetes Security <span>(CKS)</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Scripting -->
+    <script>
+        const homeView = document.getElementById('home-view');
+        const posterViews = document.querySelectorAll('.poster-view');
+        const closeBtn = document.getElementById('close-btn');
+
+        function openNode(nodeId) {
+            homeView.classList.add('hidden');
+            closeBtn.style.opacity = '1';
+            closeBtn.style.pointerEvents = 'all';
+            document.getElementById('view-' + nodeId).classList.add('active');
+        }
+
+        function closeNodes() {
+            posterViews.forEach(view => view.classList.remove('active'));
+            closeBtn.style.opacity = '0';
+            closeBtn.style.pointerEvents = 'none';
+            homeView.classList.remove('hidden');
+        }
+
+        // Particles
+        const canvas = document.getElementById('particle-canvas');
+        const ctx = canvas.getContext('2d');
+        let width, height;
+        let particles = [];
+
+        const particleSettings = {
+            count: window.innerWidth < 768 ? 40 : 100,
+            minSize: 0.5,
+            maxSize: 2.0,
+            baseColor: '74, 93, 107' // Slate accent
+        };
+
+        function resizeCanvas() {
+            width = window.innerWidth;
+            height = window.innerHeight;
+            canvas.width = width;
+            canvas.height = height;
+        }
+
+        class Particle {
+            constructor() {
+                this.reset(true);
+            }
+
+            reset(initial = false) {
+                this.x = Math.random() * width;
+                this.y = initial ? Math.random() * height : height + 10;
+                this.size = Math.random() * (particleSettings.maxSize - particleSettings.minSize) + particleSettings.minSize;
+                this.speedY = -(Math.random() * 0.4 + 0.1);
+                this.speedX = (Math.random() - 0.5) * 0.1;
+                this.opacity = Math.random() * 0.3 + 0.05;
+            }
+
+            update() {
+                this.x += this.speedX;
+                this.y += this.speedY;
+
+                if (this.y < -10) {
+                    this.reset();
+                }
+            }
+
+            draw() {
+                ctx.beginPath();
+                ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+                ctx.fillStyle = `rgba(${particleSettings.baseColor}, ${this.opacity})`;
+                ctx.fill();
+            }
+        }
+
+        function initParticles() {
+            resizeCanvas();
+            particles = [];
+            for (let i = 0; i < particleSettings.count; i++) {
+                particles.push(new Particle());
+            }
+        }
+
+        function animateCanvas() {
+            ctx.clearRect(0, 0, width, height);
+            particles.forEach(p => {
+                p.update();
+                p.draw();
+            });
+            requestAnimationFrame(animateCanvas);
+        }
+
+        window.addEventListener('resize', () => {
+            resizeCanvas();
+        });
+
+        document.addEventListener('DOMContentLoaded', () => {
+            initParticles();
+            animateCanvas();
+        });
+    </script>
+</body>
+
+</html>
