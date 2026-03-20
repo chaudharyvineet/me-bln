@@ -1105,6 +1105,15 @@
         document.addEventListener('DOMContentLoaded', () => {
             initParticles();
             animateCanvas();
+
+            // Handle direct links to specific views
+            if (window.location.hash) {
+                const nodeId = window.location.hash.substring(1);
+                const targetView = document.getElementById('view-' + nodeId);
+                if (targetView) {
+                    openNode(nodeId);
+                }
+            }
         });
     </script>
 </body>
