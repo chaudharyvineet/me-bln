@@ -690,61 +690,178 @@
 
     /* ─── TABLET ── */
     @media (max-width: 900px) {
-      .site-header, .hero, .article, .closing, .post-footer { padding-left: 28px; padding-right: 28px; }
-      .hero-grid { grid-template-columns: 1fr; }
-      .hero-right { display: none; }
-      .matrix, .series-summary { grid-template-columns: 1fr; }
-      h1 { font-size: clamp(28px, 5vw, 48px); }
-      h2 { font-size: 26px; }
-      .closing { padding-left: 28px; padding-right: 28px; }
+
+      .site-header,
+      .hero,
+      .article,
+      .closing,
+      .post-footer {
+        padding-left: 28px;
+        padding-right: 28px;
+      }
+
+      .hero-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .hero-right {
+        display: none;
+      }
+
+      .matrix,
+      .series-summary {
+        grid-template-columns: 1fr;
+      }
+
+      h1 {
+        font-size: clamp(28px, 5vw, 48px);
+      }
+
+      h2 {
+        font-size: 26px;
+      }
+
+      .closing {
+        padding-left: 28px;
+        padding-right: 28px;
+      }
     }
 
     /* ─── MOBILE (iPhone Pro ≤ 680px) ── */
     @media (max-width: 680px) {
+
       /* global padding */
-      .site-header, .hero, .article, .closing, .post-footer { padding-left: 20px; padding-right: 20px; }
+      .site-header,
+      .hero,
+      .article,
+      .closing,
+      .post-footer {
+        padding-left: 20px;
+        padding-right: 20px;
+      }
 
       /* header */
-      .site-header { height: 48px; }
-      .site-nav .nav-sep { display: none; }
-      .site-nav span:last-child { display: none; }
+      .site-header {
+        height: 48px;
+      }
+
+      .site-nav .nav-sep {
+        display: none;
+      }
+
+      .site-nav span:last-child {
+        display: none;
+      }
 
       /* hero */
-      .hero { padding-top: 44px; padding-bottom: 40px; }
-      .hero-grid { grid-template-columns: 1fr; }
-      .hero-right { display: none; }
-      h1 { font-size: clamp(24px, 8vw, 36px); margin-bottom: 20px; }
-      .hero-deck { font-size: 16px; }
-      .hero::after { font-size: 36vw; }
+      .hero {
+        padding-top: 44px;
+        padding-bottom: 40px;
+      }
+
+      .hero-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .hero-right {
+        display: none;
+      }
+
+      h1 {
+        font-size: clamp(24px, 8vw, 36px);
+        margin-bottom: 20px;
+      }
+
+      .hero-deck {
+        font-size: 16px;
+      }
+
+      .hero::after {
+        font-size: 36vw;
+      }
 
       /* article */
-      .article { padding-top: 36px; padding-bottom: 72px; }
-      h2 { font-size: 22px; margin: 40px 0 14px; }
-      h3 { margin: 26px 0 10px; }
-      p  { font-size: 16px; margin-bottom: 18px; }
+      .article {
+        padding-top: 36px;
+        padding-bottom: 72px;
+      }
+
+      h2 {
+        font-size: 22px;
+        margin: 40px 0 14px;
+      }
+
+      h3 {
+        margin: 26px 0 10px;
+      }
+
+      p {
+        font-size: 16px;
+        margin-bottom: 18px;
+      }
 
       /* code blocks */
-      pre { font-size: 11px; line-height: 1.65; padding: 14px 14px; }
-      .code-header { padding: 8px 14px; }
-      .code-filename { font-size: 10px; max-width: 60%; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+      pre {
+        font-size: 11px;
+        line-height: 1.65;
+        padding: 14px 14px;
+      }
+
+      .code-header {
+        padding: 8px 14px;
+      }
+
+      .code-filename {
+        font-size: 10px;
+        max-width: 60%;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
 
       /* callouts */
-      .callout { padding: 14px 16px; gap: 10px; }
-      .c-body { font-size: 14px; }
+      .callout {
+        padding: 14px 16px;
+        gap: 10px;
+      }
+
+      .c-body {
+        font-size: 14px;
+      }
 
       /* matrix & series summary */
-      .matrix, .series-summary { grid-template-columns: 1fr; }
+      .matrix,
+      .series-summary {
+        grid-template-columns: 1fr;
+      }
 
       /* threat grid — stack columns */
-      .threat-row { grid-template-columns: 1fr; }
-      .threat-row .tr-cell:not(:last-child) { border-bottom: 1px solid var(--border); }
+      .threat-row {
+        grid-template-columns: 1fr;
+      }
+
+      .threat-row .tr-cell:not(:last-child) {
+        border-bottom: 1px solid var(--border);
+      }
 
       /* closing */
-      .closing { padding-top: 36px; padding-bottom: 48px; }
+      .closing {
+        padding-top: 36px;
+        padding-bottom: 48px;
+      }
 
       /* footer */
-      .post-footer { flex-direction: column; align-items: flex-start; gap: 10px; padding-top: 22px; padding-bottom: 22px; }
-      .footer-center { display: none; }
+      .post-footer {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 10px;
+        padding-top: 22px;
+        padding-bottom: 22px;
+      }
+
+      .footer-center {
+        display: none;
+      }
     }
   </style>
 </head>
@@ -754,7 +871,7 @@
   <header class="site-header">
     <a href="index.html" class="site-wordmark">Vineet Chaudhary</a>
     <nav class="site-nav">
-      <span>Platform Security Dispatch</span>
+      <span>CloudNative Security</span>
       <div class="nav-sep"></div>
       <span>Post 3 of 3 — Final</span>
     </nav>
@@ -1046,8 +1163,9 @@
 
 
   <div class="post-footer">
-    <span class="footer-back">← Post 2: RBAC &amp; Control Plane Hardening</span>
-    <span class="footer-center">Platform Security Dispatch</span>
+    <a href="blog-02-rbac-controlplane.html"><span class="footer-back">← Post 2: RBAC &amp; Control Plane
+        Hardening</span></a>
+    <span class="footer-center">CloudNative Security</span>
   </div>
 
 </body>

@@ -631,74 +631,204 @@
 
     /* ─── TABLET ───────────────────────────────────── */
     @media (max-width: 900px) and (min-width: 681px) {
-      .site-header { padding: 0 28px; }
-      .hero        { padding: 60px 28px 52px; }
-      .toc-inner   { padding: 24px 28px; }
-      .content     { padding: 52px 28px 80px; }
-      .post-footer { padding: 28px 28px; }
-      h1           { font-size: clamp(30px, 5vw, 48px); }
-      h2           { font-size: 28px; }
+      .site-header {
+        padding: 0 28px;
+      }
+
+      .hero {
+        padding: 60px 28px 52px;
+      }
+
+      .toc-inner {
+        padding: 24px 28px;
+      }
+
+      .content {
+        padding: 52px 28px 80px;
+      }
+
+      .post-footer {
+        padding: 28px 28px;
+      }
+
+      h1 {
+        font-size: clamp(30px, 5vw, 48px);
+      }
+
+      h2 {
+        font-size: 28px;
+      }
     }
 
     /* ─── MOBILE (iPhone Pro ≤ 430 px) ────────────── */
     @media (max-width: 680px) {
+
       /* global padding reset */
       .site-header,
       .hero,
       .toc-inner,
       .content,
-      .post-footer  { padding-left: 20px; padding-right: 20px; }
+      .post-footer {
+        padding-left: 20px;
+        padding-right: 20px;
+      }
 
       /* header */
-      .site-header  { height: 48px; }
-      .site-nav span:last-child { display: none; }
-      .nav-sep      { display: none; }
+      .site-header {
+        height: 48px;
+      }
+
+      .site-nav span:last-child {
+        display: none;
+      }
+
+      .nav-sep {
+        display: none;
+      }
 
       /* hero */
-      .hero         { padding-top: 44px; padding-bottom: 40px; }
-      h1            { font-size: clamp(26px, 8vw, 38px); margin-bottom: 20px; }
-      .hero-series  { display: none; }
-      .hero-meta    { flex-wrap: wrap; gap: 8px; }
-      .hero-lead    { font-size: 17px; padding-left: 14px; }
-      .hero::after  { font-size: 36vw; }
+      .hero {
+        padding-top: 44px;
+        padding-bottom: 40px;
+      }
+
+      h1 {
+        font-size: clamp(26px, 8vw, 38px);
+        margin-bottom: 20px;
+      }
+
+      .hero-series {
+        display: none;
+      }
+
+      .hero-meta {
+        flex-wrap: wrap;
+        gap: 8px;
+      }
+
+      .hero-lead {
+        font-size: 17px;
+        padding-left: 14px;
+      }
+
+      .hero::after {
+        font-size: 36vw;
+      }
 
       /* TOC */
-      .toc-inner    { flex-direction: column; gap: 10px; padding-top: 18px; padding-bottom: 18px; }
-      .toc-list     { gap: 6px 0; }
-      .toc-list li  { font-size: 13px; }
+      .toc-inner {
+        flex-direction: column;
+        gap: 10px;
+        padding-top: 18px;
+        padding-bottom: 18px;
+      }
+
+      .toc-list {
+        gap: 6px 0;
+      }
+
+      .toc-list li {
+        font-size: 13px;
+      }
 
       /* content headings */
-      h2            { font-size: 24px; margin: 44px 0 14px; }
-      h3            { margin: 28px 0 10px; }
-      p             { margin-bottom: 18px; font-size: 16px; }
+      h2 {
+        font-size: 24px;
+        margin: 44px 0 14px;
+      }
+
+      h3 {
+        margin: 28px 0 10px;
+      }
+
+      p {
+        margin-bottom: 18px;
+        font-size: 16px;
+      }
 
       /* pipeline diagrams — stack vertically */
-      .diagram      { padding: 16px; }
-      .pipeline     { flex-direction: column; }
-      .pipeline-arrow { transform: rotate(90deg); align-self: center; padding: 4px 0; }
-      .stage        { min-width: auto; width: 100%; }
+      .diagram {
+        padding: 16px;
+      }
+
+      .pipeline {
+        flex-direction: column;
+      }
+
+      .pipeline-arrow {
+        transform: rotate(90deg);
+        align-self: center;
+        padding: 4px 0;
+      }
+
+      .stage {
+        min-width: auto;
+        width: 100%;
+      }
 
       /* code blocks */
-      pre           { font-size: 11px; line-height: 1.65; padding: 16px 14px; }
-      .code-header  { padding: 8px 14px; }
-      .code-filename { font-size: 10px; max-width: 60%; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+      pre {
+        font-size: 11px;
+        line-height: 1.65;
+        padding: 16px 14px;
+      }
+
+      .code-header {
+        padding: 8px 14px;
+      }
+
+      .code-filename {
+        font-size: 10px;
+        max-width: 60%;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
 
       /* callouts */
-      .callout      { padding: 14px 16px; gap: 10px; }
-      .callout-body { font-size: 14px; }
+      .callout {
+        padding: 14px 16px;
+        gap: 10px;
+      }
+
+      .callout-body {
+        font-size: 14px;
+      }
 
       /* tables — horizontal scroll */
-      .compare-table { display: block; overflow-x: auto; -webkit-overflow-scrolling: touch; font-size: 13px; }
+      .compare-table {
+        display: block;
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+        font-size: 13px;
+      }
+
       .compare-table th,
-      .compare-table td { padding: 9px 12px; }
+      .compare-table td {
+        padding: 9px 12px;
+      }
 
       /* section break */
-      .section-break { margin: 36px 0; }
+      .section-break {
+        margin: 36px 0;
+      }
 
       /* footer */
-      .post-footer  { flex-direction: column; align-items: flex-start; gap: 12px; padding-top: 24px; padding-bottom: 24px; }
-      .footer-next  { text-align: left; }
-      .next-title   { font-size: 15px; }
+      .post-footer {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 12px;
+        padding-top: 24px;
+        padding-bottom: 24px;
+      }
+
+      .footer-next {
+        text-align: left;
+      }
+
+      .next-title {
+        font-size: 15px;
+      }
     }
   </style>
 </head>
@@ -708,7 +838,7 @@
   <header class="site-header">
     <a href="index.html" class="site-wordmark">Vineet Chaudhary</a>
     <nav class="site-nav">
-      <span>Platform Security Dispatch</span>
+      <span>CloudNative Security</span>
       <div class="nav-sep"></div>
       <span>Post 1 of 3</span>
     </nav>
@@ -808,7 +938,8 @@
         <p><strong>The stale base image problem is worse than most teams realize.</strong> If your CI pipeline pins to
           <code>node:18-slim</code> and rebuilds weekly, you'll pick up security patches. If it pins to a digest and
           nobody updates it, your base layer ages in place. After six months, you're running an OS with dozens of known
-          CVEs that upstream maintainers patched months ago.</p>
+          CVEs that upstream maintainers patched months ago.
+        </p>
       </div>
     </div>
 
@@ -824,18 +955,22 @@
       <li
         style="padding:9px 0;border-bottom:1px solid var(--border);color:var(--ink-light);padding-left:16px;position:relative;font-size:15px;">
         <span style="position:absolute;left:0;color:var(--green);">→</span> Is the container configured to run as a
-        specific non-root UID?</li>
+        specific non-root UID?
+      </li>
       <li
         style="padding:9px 0;border-bottom:1px solid var(--border);color:var(--ink-light);padding-left:16px;position:relative;font-size:15px;">
         <span style="position:absolute;left:0;color:var(--green);">→</span> Are there unnecessarily exposed ports in the
-        image definition?</li>
+        image definition?
+      </li>
       <li
         style="padding:9px 0;border-bottom:1px solid var(--border);color:var(--ink-light);padding-left:16px;position:relative;font-size:15px;">
-        <span style="position:absolute;left:0;color:var(--green);">→</span> Are SUID/SGID binaries present?</li>
+        <span style="position:absolute;left:0;color:var(--green);">→</span> Are SUID/SGID binaries present?
+      </li>
       <li
         style="padding:9px 0;border-bottom:1px solid var(--border);color:var(--ink-light);padding-left:16px;position:relative;font-size:15px;">
         <span style="position:absolute;left:0;color:var(--green);">→</span> Does the image use a pinned base digest or a
-        floating tag?</li>
+        floating tag?
+      </li>
       <li style="padding:9px 0;color:var(--ink-light);padding-left:16px;position:relative;font-size:15px;"><span
           style="position:absolute;left:0;color:var(--green);">→</span> Are there secrets or credentials embedded in
         environment variables or layers?</li>
@@ -847,14 +982,17 @@
       <li
         style="padding:9px 0;border-bottom:1px solid var(--border);color:var(--ink-light);padding-left:16px;position:relative;font-size:15px;">
         <span style="position:absolute;left:0;color:var(--red);">✕</span> Runtime behavior — what the application
-        actually does with its access</li>
+        actually does with its access
+      </li>
       <li
         style="padding:9px 0;border-bottom:1px solid var(--border);color:var(--ink-light);padding-left:16px;position:relative;font-size:15px;">
-        <span style="position:absolute;left:0;color:var(--red);">✕</span> Logic vulnerabilities in application code</li>
+        <span style="position:absolute;left:0;color:var(--red);">✕</span> Logic vulnerabilities in application code
+      </li>
       <li
         style="padding:9px 0;border-bottom:1px solid var(--border);color:var(--ink-light);padding-left:16px;position:relative;font-size:15px;">
         <span style="position:absolute;left:0;color:var(--red);">✕</span> Zero-days — CVEs that haven't been published
-        yet</li>
+        yet
+      </li>
       <li style="padding:9px 0;color:var(--ink-light);padding-left:16px;position:relative;font-size:15px;"><span
           style="position:absolute;left:0;color:var(--red);">✕</span> Supply chain compromises injected upstream before
         the image was assembled</li>
@@ -1002,7 +1140,8 @@
 
     <p>Even with a solid scan gate, nothing prevents a developer from running
       <code>kubectl run --image=python:3.11</code> and pulling directly from Docker Hub. All your CI work is bypassed in
-      one command. The control that closes this gap is a <strong>ValidatingAdmissionWebhook</strong>.</p>
+      one command. The control that closes this gap is a <strong>ValidatingAdmissionWebhook</strong>.
+    </p>
 
     <div class="code-block">
       <div class="code-header">
@@ -1040,7 +1179,8 @@
       <div class="callout-body">
         <p><strong>The full loop matters.</strong> Your security posture is only as strong as the weakest link: build →
           scan → push → admit → runtime. A hardened CI gate with no admission webhook is defeated by one direct
-          <code>kubectl apply</code>. Don't optimize one layer to the exclusion of others.</p>
+          <code>kubectl apply</code>. Don't optimize one layer to the exclusion of others.
+        </p>
       </div>
     </div>
 
@@ -1051,10 +1191,11 @@
   </div>
 
   <div class="post-footer">
-    <span class="footer-back">Platform Security Dispatch · Post 1 of 3</span>
+    <span class="footer-back">CloudNative Security · Post 1 of 3</span>
     <div class="footer-next">
       <span class="next-label">Next</span>
-      <span class="next-title">RBAC at Scale &amp; Control Plane Hardening →</span>
+      <a href="blog-02-rbac-controlplane.html"><span class="next-title">RBAC at Scale &amp; Control Plane Hardening
+          →</span></a>
     </div>
   </div>
 

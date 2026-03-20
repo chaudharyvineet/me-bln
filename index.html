@@ -541,6 +541,199 @@
             padding: 0.3vh 0.6vw;
             border-radius: 3px;
         }
+
+        /* -----------------------
+           MOBILE OVERRIDES
+           ----------------------- */
+        @media (max-width: 768px) {
+
+            /* --- Landing page: declutter nav nodes --- */
+            .nav-node {
+                font-size: clamp(1.4rem, 5vw, 2rem);
+            }
+
+            #nav-about {
+                top: 8%;
+                left: 5%;
+            }
+
+            #nav-contact {
+                top: 8%;
+                right: 5%;
+            }
+
+            #nav-project {
+                top: 32%;
+                left: 5%;
+                font-size: clamp(1.2rem, 4.5vw, 1.8rem);
+            }
+
+            #nav-work {
+                top: 32%;
+                right: 5%;
+            }
+
+            #nav-stack {
+                bottom: 18%;
+                left: 5%;
+            }
+
+            #nav-blogs {
+                bottom: 18%;
+                right: 5%;
+                font-size: clamp(1.2rem, 4.5vw, 1.8rem);
+            }
+
+            .massive-name {
+                font-size: clamp(3rem, 14vw, 6rem);
+            }
+
+            .sub-title {
+                font-size: clamp(0.55rem, 2vw, 0.75rem);
+                letter-spacing: 0.12em;
+            }
+
+            /* --- All poster views: allow scrolling, start from top --- */
+            .poster-view {
+                overflow-y: auto;
+                overflow-x: hidden;
+                justify-content: flex-start;
+                padding: 14vw 6vw 8vw;
+                -webkit-overflow-scrolling: touch;
+            }
+
+            .poster-title {
+                font-size: 30vw;
+                top: -2vh;
+            }
+
+            /* --- About --- */
+            .huge-text-about {
+                font-size: clamp(1.5rem, 5.5vw, 2.5rem);
+                max-width: 100%;
+                line-height: 1.25;
+            }
+
+            .about-sub {
+                max-width: 100%;
+                font-size: clamp(0.9rem, 3.5vw, 1.1rem);
+                margin-top: 3vh;
+            }
+
+            /* --- Research --- */
+            .project-layout {
+                grid-template-columns: 1fr;
+                gap: 3vh;
+            }
+
+            .project-title {
+                font-size: clamp(2rem, 8vw, 3.5rem);
+            }
+
+            .project-desc {
+                font-size: clamp(0.9rem, 3.5vw, 1.1rem);
+                max-width: 100%;
+            }
+
+            .project-tags {
+                gap: 2vw;
+            }
+
+            .tag {
+                padding: 0.8vw 2.5vw;
+                font-size: 0.75rem;
+            }
+
+            /* --- Experience --- */
+            .work-flow {
+                display: flex;
+                flex-direction: column;
+                height: auto;
+                gap: 4vh;
+            }
+
+            .work-item {
+                padding-left: 4vw;
+                border-left: 2px solid rgba(0, 0, 0, 0.1);
+            }
+
+            .work-company {
+                font-size: clamp(1.8rem, 6vw, 2.5rem);
+            }
+
+            .edu-item {
+                flex-direction: column;
+                gap: 3vh;
+                grid-column: unset;
+                margin-top: 2vh;
+                padding-top: 3vh;
+            }
+
+            .edu-node {
+                margin-right: 0;
+            }
+
+            /* --- Capabilities --- */
+            .stack-cloud {
+                display: flex;
+                flex-direction: column;
+                height: auto;
+                gap: 3.5vh;
+            }
+
+            .stack-cluster h3 {
+                font-size: clamp(1.4rem, 5vw, 2rem);
+            }
+
+            .stack-cluster p {
+                font-size: clamp(0.85rem, 3.5vw, 1rem);
+            }
+
+            /* --- Contact --- */
+            .contact-layout {
+                flex-direction: column;
+                height: auto;
+                gap: 5vh;
+                align-items: flex-start;
+            }
+
+            .contact-huge-links a {
+                font-size: clamp(2.5rem, 12vw, 5rem);
+            }
+
+            .certifications {
+                text-align: left;
+            }
+
+            .cert-list {
+                font-size: clamp(1.2rem, 5vw, 1.8rem);
+            }
+
+            /* --- Writing / Blogs --- */
+            .blogs-layout {
+                grid-template-columns: 1fr;
+                gap: 2vh;
+            }
+
+            .blog-tags {
+                gap: 1.5vw;
+            }
+
+            .blog-tag {
+                padding: 0.4vh 2vw;
+            }
+        }
+
+        /* Extra-small phones */
+        @media (max-width: 390px) {
+            .poster-view {
+                padding: 16vw 5vw 8vw;
+            }
+
+            .huge-text-about {
+                font-size: clamp(1.3rem, 5vw, 2rem);
+            }
+        }
     </style>
 </head>
 
@@ -776,7 +969,8 @@
                         </div>
                     </a>
 
-                    <a class="blog-entry" href="blog-04-5g-anomaly.html" target="_blank" style="text-decoration:none;color:inherit;">
+                    <a class="blog-entry" href="blog-04-5g-anomaly.html" target="_blank"
+                        style="text-decoration:none;color:inherit;">
                         <div class="blog-date">2024 &mdash; ML / Security</div>
                         <div class="blog-title">Anomaly Detection in 5G Networks Using Federated Learning</div>
                         <div class="blog-summary">Research notes on applying n-gram packet modelling and GAN-generated
