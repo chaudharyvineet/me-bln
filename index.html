@@ -151,6 +151,12 @@
             right: 25%;
         }
 
+        #nav-blogs {
+            bottom: 18%;
+            right: 12%;
+            font-size: clamp(1.8rem, 4.5vh, 3.5rem);
+        }
+
         /* -----------------------
            CONTENT POSTERS
            ----------------------- */
@@ -439,6 +445,102 @@
         .cert-list span {
             color: var(--accent);
         }
+
+        /* BLOGS */
+        .blogs-layout {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 4vw;
+            align-items: start;
+            padding-top: 2vh;
+        }
+
+        .blogs-header {
+            font-family: var(--font-display);
+            font-size: clamp(1.5rem, 4vh, 3rem);
+            font-weight: 400;
+            line-height: 1.1;
+            margin-bottom: 6vh;
+            max-width: 100%;
+        }
+
+        .blogs-header span {
+            color: var(--accent);
+        }
+
+        .blog-list {
+            display: flex;
+            flex-direction: column;
+            gap: 3vh;
+        }
+
+        .blog-entry {
+            display: flex;
+            flex-direction: column;
+            gap: 0.4vh;
+            padding-bottom: 2.5vh;
+            border-bottom: 1px solid rgba(0, 0, 0, 0.08);
+            cursor: pointer;
+            transition: padding-left var(--ease-fast);
+        }
+
+        .blog-entry:last-child {
+            border-bottom: none;
+        }
+
+        .blog-entry:hover {
+            padding-left: 0.6vw;
+        }
+
+        .blog-entry:hover .blog-title {
+            color: var(--accent);
+        }
+
+        .blog-date {
+            font-family: var(--font-body);
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            letter-spacing: 0.15em;
+            color: var(--text-secondary);
+            font-weight: 500;
+        }
+
+        .blog-title {
+            font-family: var(--font-display);
+            font-size: clamp(1.4rem, 2.8vh, 2.2rem);
+            font-weight: 500;
+            line-height: 1.1;
+            color: var(--text-primary);
+            transition: color var(--ease-fast);
+        }
+
+        .blog-summary {
+            font-family: var(--font-body);
+            font-size: clamp(0.8rem, 1.4vh, 0.95rem);
+            color: var(--text-secondary);
+            line-height: 1.5;
+            font-weight: 300;
+            max-width: 90%;
+        }
+
+        .blog-tags {
+            display: flex;
+            gap: 0.6vw;
+            flex-wrap: wrap;
+            margin-top: 0.6vh;
+        }
+
+        .blog-tag {
+            font-family: var(--font-body);
+            font-size: 0.72rem;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            font-weight: 500;
+            color: var(--accent);
+            border: 1px solid rgba(74, 93, 107, 0.3);
+            padding: 0.3vh 0.6vw;
+            border-radius: 3px;
+        }
     </style>
 </head>
 
@@ -453,6 +555,7 @@
         <div class="nav-node" id="nav-project" onclick="openNode('project')">Research</div>
         <div class="nav-node" id="nav-stack" onclick="openNode('stack')">Capabilities</div>
         <div class="nav-node" id="nav-contact" onclick="openNode('contact')">Connect</div>
+        <div class="nav-node" id="nav-blogs" onclick="openNode('blogs')">Writing</div>
 
         <div class="centerpiece">
             <h1 class="massive-name">Vineet<br><span>Chaudhary</span></h1>
@@ -608,6 +711,84 @@
                     <h3>DevSecOps & Code</h3>
                     <p>Advanced Python, Go, Bash, Node.js. Terraform, CloudFormation, Jenkins, GitHub Actions, JFrog.
                     </p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Technical Blogs -->
+    <div class="poster-view" id="view-blogs">
+        <div class="poster-title">Writing</div>
+        <div class="poster-content">
+            <div class="huge-text-about"
+                style="font-size: clamp(1.5rem, 4vh, 3rem); margin-bottom: 5vh; max-width: 100%;">
+                Technical <span>writing</span> &amp; research notes.
+            </div>
+            <div class="blogs-layout">
+                <div class="blog-list">
+
+                    <a class="blog-entry" href="blog-01-image-security.html" target="_blank"
+                        style="text-decoration:none;color:inherit;">
+                        <div class="blog-date">January 2026 &mdash; Supply Chain</div>
+                        <div class="blog-title">From Supply Chain to Runtime: The Full Arc of Container Image Security
+                        </div>
+                        <div class="blog-summary">Container image security isn't a single gate — it's a chain of
+                            decisions that begins at your Dockerfile and doesn't end until the last replica terminates.
+                        </div>
+                        <div class="blog-tags">
+                            <span class="blog-tag">Kubernetes</span>
+                            <span class="blog-tag">CI/CD</span>
+                            <span class="blog-tag">Image Scanning</span>
+                        </div>
+                    </a>
+
+                    <a class="blog-entry" href="blog-02-rbac-controlplane.html" target="_blank"
+                        style="text-decoration:none;color:inherit;">
+                        <div class="blog-date">February 2025 &mdash; Access Control</div>
+                        <div class="blog-title">Access Control at Scale: RBAC, Control Plane Hardening, and the Gaps
+                            Teams Miss</div>
+                        <div class="blog-summary">RBAC is easy to get "basically working" while leaving subtle,
+                            high-blast-radius holes. Here's how senior engineers think about it — and what the control
+                            plane looks like underneath.</div>
+                        <div class="blog-tags">
+                            <span class="blog-tag">RBAC</span>
+                            <span class="blog-tag">etcd</span>
+                            <span class="blog-tag">Audit Logging</span>
+                        </div>
+                    </a>
+
+                </div>
+
+                <div class="blog-list">
+
+                    <a class="blog-entry" href="blog-03-workload-runtime.html" target="_blank"
+                        style="text-decoration:none;color:inherit;">
+                        <div class="blog-date">March 2025 &mdash; Runtime Security</div>
+                        <div class="blog-title">Workload Security: Pod Constraints, Network Isolation, &amp; Runtime
+                            Threat Detection</div>
+                        <div class="blog-summary">How to constrain what a running pod can do, isolate what it can reach
+                            via network policies, and detect anomalous behaviour with syscall-level rules and automated
+                            response.</div>
+                        <div class="blog-tags">
+                            <span class="blog-tag">Falco</span>
+                            <span class="blog-tag">Seccomp</span>
+                            <span class="blog-tag">Network Policy</span>
+                        </div>
+                    </a>
+
+                    <a class="blog-entry" href="blog-04-5g-anomaly.html" target="_blank" style="text-decoration:none;color:inherit;">
+                        <div class="blog-date">2024 &mdash; ML / Security</div>
+                        <div class="blog-title">Anomaly Detection in 5G Networks Using Federated Learning</div>
+                        <div class="blog-summary">Research notes on applying n-gram packet modelling and GAN-generated
+                            synthetic traffic to train privacy-preserving intrusion detection models on 5G datasets.
+                        </div>
+                        <div class="blog-tags">
+                            <span class="blog-tag">Federated Learning</span>
+                            <span class="blog-tag">5G</span>
+                            <span class="blog-tag">GANs</span>
+                        </div>
+                    </a>
+
                 </div>
             </div>
         </div>

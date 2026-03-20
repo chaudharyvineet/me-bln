@@ -1,0 +1,522 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Access Control at Scale: RBAC, Control Plane Hardening, and the Gaps Teams Miss</title>
+<meta name="description" content="RBAC is the most consistently misunderstood security primitive in Kubernetes. Here's how senior engineers think about it — and what the control plane looks like underneath.">
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,400;1,500&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #FAFAFA;
+  --ink: #111111;
+  --ink-light: #333333;
+  --muted: #777777;
+  --accent: #4A5D6B;
+  --accent-light: rgba(74,93,107,0.12);
+  --accent-border: rgba(74,93,107,0.3);
+  --border: rgba(0,0,0,0.08);
+  --surface: #F3F3F1;
+  --code-bg: #111111;
+  --code-fg: #E8E4D8;
+  --green: #2d7a4f;
+  --green-bg: rgba(45,122,79,0.07);
+  --red: #9b2424;
+  --red-bg: rgba(155,36,36,0.07);
+  --yellow-bg: rgba(180,140,0,0.07);
+  --font-display: 'Cormorant Garamond', serif;
+  --font-body: 'DM Sans', sans-serif;
+  --font-mono: 'DM Mono', monospace;
+}
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html { scroll-behavior: smooth; }
+body {
+  background: var(--bg);
+  color: var(--ink);
+  font-family: var(--font-body);
+  font-size: 17px;
+  line-height: 1.8;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* ─── SITE HEADER ── */
+.site-header {
+  background: var(--ink);
+  padding: 0 56px;
+  height: 52px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.site-wordmark {
+  font-family: var(--font-display);
+  font-style: italic;
+  font-size: 18px;
+  color: rgba(250,250,250,0.9);
+  text-decoration: none;
+}
+.site-nav {
+  display: flex;
+  align-items: center;
+  gap: 28px;
+  font-size: 12px;
+  color: rgba(250,250,250,0.35);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+.nav-sep { width: 1px; height: 14px; background: rgba(255,255,255,0.1); }
+
+/* ─── HERO ── */
+.hero {
+  background: var(--ink);
+  padding: 80px 56px 72px;
+  position: relative;
+  overflow: hidden;
+}
+.hero::after {
+  content: 'RBAC';
+  position: absolute;
+  bottom: -4vh; right: -1vw;
+  font-family: var(--font-display);
+  font-size: 22vw; font-weight: 600;
+  color: rgba(255,255,255,0.03);
+  pointer-events: none; line-height: 1;
+}
+.hero-inner { max-width: 820px; margin: 0 auto; position: relative; z-index: 1; }
+.hero-kicker {
+  display: flex; align-items: center; gap: 12px;
+  font-size: 11px; font-weight: 500; letter-spacing: 0.2em; text-transform: uppercase;
+  color: var(--accent); margin-bottom: 28px;
+}
+.hero-kicker::before { content: ''; width: 28px; height: 1px; background: var(--accent); display: block; }
+.hero-series { font-size: 11px; letter-spacing: 0.15em; text-transform: uppercase; color: rgba(255,255,255,0.25); margin-left: auto; }
+h1 {
+  font-family: var(--font-display);
+  font-size: clamp(34px, 5vw, 60px);
+  font-weight: 500; line-height: 1.08; letter-spacing: -0.01em;
+  color: #FAFAFA; margin-bottom: 32px;
+}
+h1 em { font-style: italic; color: rgba(74,93,107,0.8); }
+.hero-meta { display: flex; gap: 24px; font-size: 12px; color: rgba(255,255,255,0.28); letter-spacing: 0.08em; margin-bottom: 32px; }
+.hero-lead {
+  font-family: var(--font-display);
+  font-size: 20px; font-weight: 400; font-style: italic;
+  line-height: 1.6; color: rgba(250,250,250,0.55);
+  max-width: 640px; border-left: 2px solid var(--accent); padding-left: 22px;
+}
+
+/* ─── META BAND ── */
+.meta-band {
+  background: var(--surface); border-bottom: 1px solid var(--border);
+  padding: 16px 56px; display: flex; align-items: center; gap: 24px;
+  font-size: 12px; color: var(--muted); flex-wrap: wrap; letter-spacing: 0.06em;
+}
+.meta-band strong { color: var(--ink); }
+.meta-sep { width: 1px; height: 14px; background: var(--border); }
+
+/* ─── CONTENT LAYOUT ── */
+.content-wrap {
+  max-width: 1100px; margin: 0 auto; padding: 64px 56px 100px;
+  display: grid; grid-template-columns: 1fr 240px; gap: 72px; align-items: start;
+}
+.article-body { min-width: 0; }
+
+/* ─── SIDEBAR ── */
+.sidebar { position: sticky; top: 72px; }
+.sidebar-card { background: var(--surface); border: 1px solid var(--border); padding: 20px 22px; margin-bottom: 16px; }
+.sidebar-title {
+  font-size: 10px; font-weight: 500; letter-spacing: 0.22em; text-transform: uppercase;
+  color: var(--muted); margin-bottom: 14px; padding-bottom: 8px; border-bottom: 1px solid var(--border);
+}
+.sidebar-list { list-style: none; }
+.sidebar-list li {
+  padding: 6px 0; border-bottom: 1px dashed var(--border);
+  font-size: 13px; color: var(--ink-light); display: flex; gap: 8px; line-height: 1.4;
+}
+.sidebar-list li:last-child { border-bottom: none; }
+.sidebar-list .num { font-family: var(--font-mono); font-size: 10px; color: var(--accent); flex-shrink: 0; padding-top: 1px; }
+.sidebar-aside {
+  background: var(--accent-light); border: 1px solid var(--accent-border);
+  border-left: 3px solid var(--accent); padding: 16px 18px;
+  font-size: 13.5px; color: var(--ink-light); line-height: 1.6;
+}
+.sidebar-aside strong { color: var(--accent); font-size: 10px; letter-spacing: 0.12em; text-transform: uppercase; display: block; margin-bottom: 6px; }
+
+/* ─── TYPOGRAPHY ── */
+h2 {
+  font-family: var(--font-display);
+  font-size: 32px; font-weight: 500; line-height: 1.15;
+  color: var(--ink); margin: 60px 0 18px; letter-spacing: -0.01em;
+  position: relative; padding-bottom: 14px;
+}
+h2::after { content: ''; position: absolute; bottom: 0; left: 0; width: 28px; height: 2px; background: var(--accent); }
+h2.first { margin-top: 0; }
+h3 { font-family: var(--font-body); font-size: 11px; font-weight: 500; letter-spacing: 0.2em; text-transform: uppercase; color: var(--accent); margin: 40px 0 12px; }
+p { margin-bottom: 22px; color: var(--ink-light); line-height: 1.75; }
+strong { color: var(--ink); font-weight: 500; }
+em { font-style: italic; }
+
+/* ─── CODE ── */
+.code-block { margin: 28px 0; border: 1px solid rgba(0,0,0,0.12); overflow: hidden; }
+.code-header {
+  background: #1a1a1a; padding: 9px 20px;
+  display: flex; align-items: center; justify-content: space-between;
+  border-bottom: 1px solid rgba(255,255,255,0.06);
+}
+.code-filename { font-family: var(--font-mono); font-size: 11px; color: rgba(255,255,255,0.35); }
+.code-lang { font-family: var(--font-mono); font-size: 10px; color: var(--accent); letter-spacing: 0.1em; text-transform: uppercase; background: rgba(74,93,107,0.2); padding: 2px 8px; border-radius: 2px; }
+pre { background: var(--code-bg); color: var(--code-fg); font-family: var(--font-mono); font-size: 12.5px; line-height: 1.74; padding: 22px 24px; overflow-x: auto; margin: 0; }
+.k { color: #7ba7be; } .v { color: #85c4a0; } .s { color: #d4b483; }
+.c { color: #4a5060; font-style: italic; } .w { color: #c47a7a; } .h { color: #e8c97a; font-weight: 500; }
+code { font-family: var(--font-mono); font-size: 0.83em; background: var(--surface); border: 1px solid var(--border); color: var(--accent); padding: 1px 6px; border-radius: 3px; }
+
+/* ─── CALLOUTS ── */
+.callout { padding: 18px 22px; margin: 24px 0; border-left: 3px solid; }
+.callout.warn  { background: var(--red-bg);      border-color: var(--red); }
+.callout.info  { background: var(--accent-light); border-color: var(--accent); }
+.callout.note  { background: var(--yellow-bg);    border-color: #a07820; }
+.callout.rule  { background: var(--surface);      border-color: var(--ink); }
+.callout-head { font-size: 10px; font-weight: 500; letter-spacing: 0.18em; text-transform: uppercase; margin-bottom: 6px; }
+.warn .callout-head  { color: var(--red); }
+.info .callout-head  { color: var(--accent); }
+.note .callout-head  { color: #a07820; }
+.rule .callout-head  { color: var(--ink); }
+.callout p { margin: 0; font-size: 15px; }
+
+/* ─── SCENARIO BOXES ── */
+.scenario { background: var(--surface); border: 1px solid var(--border); padding: 24px 28px; margin: 28px 0; position: relative; }
+.scenario-label { position: absolute; top: -10px; left: 18px; font-size: 10px; font-weight: 500; letter-spacing: 0.2em; text-transform: uppercase; padding: 3px 10px; }
+.scenario-label.real { background: var(--red); color: white; }
+.scenario-label.good { background: var(--green); color: white; }
+.scenario h4 { font-family: var(--font-display); font-size: 18px; font-weight: 500; font-style: italic; color: var(--ink); margin-bottom: 10px; }
+.scenario p { font-size: 15px; }
+
+/* ─── TABLE ── */
+.decision-table { width: 100%; border-collapse: collapse; margin: 24px 0; font-size: 14px; }
+.decision-table th { background: var(--ink); color: var(--bg); padding: 10px 16px; text-align: left; font-size: 10px; font-weight: 500; letter-spacing: 0.14em; text-transform: uppercase; }
+.decision-table td { padding: 11px 16px; border-bottom: 1px solid var(--border); color: var(--ink-light); vertical-align: top; line-height: 1.5; }
+.decision-table tr:nth-child(odd) td { background: var(--surface); }
+.decision-table tr:nth-child(even) td { background: var(--bg); }
+.check-yes { color: var(--green); font-weight: 600; }
+.check-no  { color: var(--red);   font-weight: 600; }
+
+/* ─── SECTION BREAK ── */
+.break { text-align: center; margin: 56px 0; color: var(--muted); letter-spacing: 0.3em; font-size: 14px; }
+
+/* ─── FOOTER ── */
+.post-footer { background: var(--ink); padding: 32px 56px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 16px; }
+.footer-back { font-size: 13px; color: rgba(255,255,255,0.25); }
+.footer-next { text-align: right; }
+.next-label { font-size: 10px; letter-spacing: 0.18em; text-transform: uppercase; color: rgba(255,255,255,0.25); display: block; margin-bottom: 4px; }
+.next-title { font-family: var(--font-display); font-size: 17px; font-style: italic; color: rgba(74,93,107,0.85); }
+
+/* ─── TABLET ── */
+@media (max-width: 900px) {
+  .content-wrap { grid-template-columns: 1fr; padding-left: 28px; padding-right: 28px; gap: 0; }
+  .sidebar { display: none; }
+  .site-header, .hero, .meta-band, .post-footer { padding-left: 28px; padding-right: 28px; }
+  h1 { font-size: clamp(28px, 5vw, 48px); }
+  h2 { font-size: 26px; }
+}
+
+/* ─── MOBILE (iPhone Pro ≤ 680px) ── */
+@media (max-width: 680px) {
+  /* global padding */
+  .site-header, .hero, .meta-band, .post-footer { padding-left: 20px; padding-right: 20px; }
+  .content-wrap { padding: 36px 20px 72px; grid-template-columns: 1fr; }
+  .sidebar { display: none; }
+
+  /* header */
+  .site-header { height: 48px; }
+  .site-nav .nav-sep { display: none; }
+  .site-nav span:last-child { display: none; }
+
+  /* hero */
+  .hero { padding: 44px 20px 40px; }
+  h1 { font-size: clamp(24px, 8vw, 36px); margin-bottom: 20px; }
+  .hero-series { display: none; }
+  .hero-meta { flex-wrap: wrap; gap: 8px; }
+  .hero-lead { font-size: 17px; padding-left: 14px; }
+  .hero::after { font-size: 36vw; }
+
+  /* meta band */
+  .meta-band { flex-wrap: wrap; gap: 8px; padding-top: 12px; padding-bottom: 12px; }
+  .meta-sep { display: none; }
+
+  /* headings & body */
+  h2 { font-size: 22px; margin: 40px 0 14px; }
+  h3 { margin: 26px 0 10px; }
+  p  { font-size: 16px; margin-bottom: 18px; }
+
+  /* scenario boxes */
+  .scenario { padding: 20px 16px; }
+
+  /* code blocks */
+  pre { font-size: 11px; line-height: 1.65; padding: 14px 14px; }
+  .code-header { padding: 8px 14px; }
+  .code-filename { font-size: 10px; max-width: 60%; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+  /* callouts */
+  .callout { padding: 14px 16px; }
+  .callout p { font-size: 14px; }
+
+  /* tables */
+  .decision-table { display: block; overflow-x: auto; -webkit-overflow-scrolling: touch; font-size: 13px; }
+  .decision-table th, .decision-table td { padding: 9px 12px; }
+
+  /* break */
+  .break { margin: 36px 0; }
+
+  /* footer */
+  .post-footer { flex-direction: column; align-items: flex-start; gap: 10px; padding-top: 22px; padding-bottom: 22px; }
+  .footer-next { text-align: left; }
+  .next-title { font-size: 15px; }
+}
+</style>
+</head>
+<body>
+
+<header class="site-header">
+  <a href="index.html" class="site-wordmark">Vineet Chaudhary</a>
+  <nav class="site-nav">
+    <span>Platform Security Dispatch</span>
+    <div class="nav-sep"></div>
+    <span>Post 2 of 3</span>
+  </nav>
+</header>
+
+<div class="hero">
+  <div class="hero-inner">
+    <div class="hero-kicker">
+      Access Control &amp; Control Plane
+      <span class="hero-series">Kubernetes Hardening Series</span>
+    </div>
+    <h1>Access Control at Scale:<br><em>RBAC, Control Plane Hardening,</em><br>and the Gaps Teams Miss</h1>
+    <div class="hero-meta">
+      <span>April 2025</span>
+      <span>~20 min read</span>
+    </div>
+    <p class="hero-lead">
+      RBAC is the most consistently misunderstood security primitive in Kubernetes. Not because it's complicated to learn, but because it's easy to get "basically working" while leaving subtle, high-blast-radius holes. Here's how senior engineers think about it.
+    </p>
+  </div>
+</div>
+
+<div class="meta-band">
+  <span><strong>~20 min read</strong></span><div class="meta-sep"></div>
+  <span>Control Plane Security</span><div class="meta-sep"></div>
+  <span>RBAC Design</span><div class="meta-sep"></div>
+  <span>etcd, kubelet, API Server</span>
+</div>
+
+<div class="content-wrap">
+<div class="article-body">
+
+  <h2 class="first">The Mental Model Problem</h2>
+
+  <p>Most engineers encounter Kubernetes RBAC by writing their first Role and RoleBinding to make a CI pipeline work — and then building a mental model around that experience. That mental model is incomplete in some critical ways.</p>
+
+  <p>The most damaging incomplete model is this: <em>RBAC is primarily about human users accessing the cluster via kubectl.</em> In reality, the majority of API requests in a production cluster come from software — controllers, operators, admission webhooks, sidecar agents, and CI systems. The RBAC design that governs those software identities matters more, and is more often neglected.</p>
+
+  <h2>The Four Subjects — and Which One Gets Misconfigured Most</h2>
+
+  <p><strong>Regular users</strong> authenticate via certificates, OIDC tokens, or webhook authenticators. Kubernetes has no User API object — users exist only as subjects in certificate CN fields or token claims.</p>
+
+  <p><strong>Service accounts</strong> are Kubernetes-native identities for pods and controllers. They're namespaced, they have automatically-generated API tokens, and they're what most workloads use to authenticate to the Kubernetes API. This is where most misconfiguration lives.</p>
+
+  <p><strong>Groups</strong> are implicit collections, not explicit objects — defined by the Organization field in a user certificate, or system-level membership like <code>system:nodes</code>.</p>
+
+  <p><strong>System identities</strong> — <code>system:kube-scheduler</code>, <code>system:kube-controller-manager</code>, <code>system:nodes</code> — are Kubernetes-internal subjects with pre-bound cluster roles.</p>
+
+  <div class="scenario">
+    <div class="scenario-label real">The Real Failure Mode</div>
+    <h4>The default ServiceAccount accumulation problem</h4>
+    <p>Team A deploys a monitoring agent. It needs to list pods across namespaces, so they bind <code>cluster-admin</code> to the <code>default</code> ServiceAccount in the <code>monitoring</code> namespace. Six months later, another team deploys an application into the same namespace without specifying a <code>serviceAccountName</code>. That application's pod silently receives a token that grants cluster-admin. Nobody notices until an application vulnerability is exploited and the attacker uses the token to list every secret in the cluster.</p>
+  </div>
+
+  <h2>Designing RBAC at Scale: The Patterns That Hold Up</h2>
+
+  <h3>Pattern 1: Namespace-per-team with standardized role tiers</h3>
+
+  <p>Instead of crafting bespoke Roles for every workload, define three or four tiers at the cluster level — read-only, operator, deployer, admin — and bind teams to the appropriate tier in their namespace.</p>
+
+  <div class="code-block">
+    <div class="code-header">
+      <span class="code-filename">cluster-roles-tier-definitions.yaml</span>
+      <span class="code-lang">YAML</span>
+    </div>
+    <pre><span class="c"># Tier 1: Read-only — for dashboards, auditors, on-call engineers</span>
+<span class="k">kind:</span> <span class="s">ClusterRole</span>
+<span class="k">metadata:</span>
+  <span class="k">name:</span> <span class="s">tier-readonly</span>
+<span class="k">rules:</span>
+<span class="k">- apiGroups:</span> <span class="s">["", "apps", "batch"]</span>
+  <span class="k">resources:</span> <span class="s">["pods", "deployments", "jobs", "services", "configmaps", "events"]</span>
+  <span class="k">verbs:</span> <span class="s">["get", "list", "watch"]</span>
+<span class="c"># Explicitly NOT: secrets, exec, portforward, delete</span>
+
+---
+<span class="c"># Tier 3: Deployer — for CI pipelines writing new workloads</span>
+<span class="k">kind:</span> <span class="s">ClusterRole</span>
+<span class="k">metadata:</span>
+  <span class="k">name:</span> <span class="s">tier-deployer</span>
+<span class="k">rules:</span>
+<span class="k">- apiGroups:</span> <span class="s">["apps"]</span>
+  <span class="k">resources:</span> <span class="s">["deployments", "statefulsets", "daemonsets"]</span>
+  <span class="k">verbs:</span> <span class="s">["get", "list", "create", "update", "patch"]</span>
+<span class="c"># No delete — prevent accidental or malicious destruction</span></pre>
+  </div>
+
+  <div class="callout warn">
+    <div class="callout-head">Watch This</div>
+    <p>A RoleBinding that references a <strong>ClusterRole</strong> grants the ClusterRole's permissions only within the namespace of the RoleBinding. A <strong>ClusterRoleBinding</strong> referencing the same ClusterRole grants those permissions cluster-wide. The distinction is easy to miss; the blast radius difference is enormous.</p>
+  </div>
+
+  <div class="break">· · ·</div>
+
+  <h2>The Control Plane: What's Actually Running and Why It Matters</h2>
+
+  <p>Most Kubernetes security conversations treat the control plane as a monolith. In reality it's a collection of processes — each with its own API surface, authentication model, and failure modes. Understanding each component is the foundation of control plane hardening.</p>
+
+  <h3>The API server: your biggest attack surface</h3>
+
+  <p>The <code>kube-apiserver</code> is the single point through which all cluster state is managed. If you compromise it, you have the cluster. Beyond RBAC, the API server has configuration parameters frequently left at insecure defaults:</p>
+
+  <div class="code-block">
+    <div class="code-header">
+      <span class="code-filename">audit: kube-apiserver flags to verify</span>
+      <span class="code-lang">SHELL</span>
+    </div>
+    <pre><span class="c"># Inspect running API server arguments on a control plane node:</span>
+ps aux | grep kube-apiserver | tr ' ' '\n' | grep -E 'insecure|anonymous|audit|admission'
+
+<span class="c"># Do NOT want to see:</span>
+<span class="w">--insecure-port=8080</span>
+<span class="w">--anonymous-auth=true</span>
+
+<span class="c"># Want to see:</span>
+<span class="v">--anonymous-auth=false</span>
+<span class="v">--audit-log-path=/var/log/k8s/audit.log</span>
+<span class="v">--audit-policy-file=/etc/kubernetes/audit-policy.yaml</span>
+<span class="v">--enable-admission-plugins=...NodeRestriction,...</span></pre>
+  </div>
+
+  <h3>etcd: the database you never think about until something explodes</h3>
+
+  <p>etcd holds every secret, every configuration, every workload spec — in a format that requires only base64 decoding to read. Direct access to the etcd API bypasses Kubernetes RBAC entirely.</p>
+
+  <div class="scenario">
+    <div class="scenario-label real">Real Threat Vector</div>
+    <h4>The unauthenticated etcd endpoint</h4>
+    <p>In several high-profile Kubernetes cluster compromises, the attack chain started with an exposed etcd port (2379/2380) reachable from the internet — or from a workload namespace — with no authentication. An attacker who can reach etcd can <code>etcdctl get --prefix /registry/secrets</code> and retrieve every secret in the cluster in seconds. No RBAC. No audit log. No admission webhook.</p>
+  </div>
+
+  <div class="code-block">
+    <div class="code-header">
+      <span class="code-filename">etcd-security-flags.conf</span>
+      <span class="code-lang">CONF</span>
+    </div>
+    <pre><span class="c"># Peer-to-peer TLS (between etcd cluster members)</span>
+<span class="k">--peer-cert-file=</span><span class="s">/etc/etcd/pki/peer.crt</span>
+<span class="k">--peer-key-file=</span><span class="s">/etc/etcd/pki/peer.key</span>
+<span class="k">--peer-client-cert-auth=</span><span class="v">true</span>
+
+<span class="c"># Client TLS (between API server and etcd)</span>
+<span class="k">--cert-file=</span><span class="s">/etc/etcd/pki/server.crt</span>
+<span class="k">--client-cert-auth=</span><span class="v">true</span>
+
+<span class="c"># Encryption at rest:</span>
+<span class="k">--encryption-provider-config=</span><span class="s">/etc/kubernetes/encryption.yaml</span></pre>
+  </div>
+
+  <div class="callout info">
+    <div class="callout-head">Encryption at Rest</div>
+    <p>Enabling mTLS for etcd communication does <em>not</em> encrypt data at rest. A cluster with etcd TLS configured but no EncryptionConfiguration still stores secrets as base64-encoded plaintext on disk. Enable <code>aescbc</code> or <code>aesgcm</code> provider for Secrets at minimum.</p>
+  </div>
+
+  <h2>Building an Audit Log That's Actually Useful</h2>
+
+  <p>A well-engineered audit policy is tiered. High-signal events — secret access, exec/attach, authentication failures, policy changes — get full <code>RequestResponse</code> logging. Routine read operations get <code>Metadata</code>. Internal system traffic gets <code>None</code>.</p>
+
+  <div class="code-block">
+    <div class="code-header">
+      <span class="code-filename">/etc/kubernetes/audit-policy.yaml</span>
+      <span class="code-lang">YAML</span>
+    </div>
+    <pre><span class="k">apiVersion:</span> <span class="s">audit.k8s.io/v1</span>
+<span class="k">kind:</span> <span class="s">Policy</span>
+<span class="k">rules:</span>
+  <span class="c"># CRITICAL: Log all secret access in full</span>
+  <span class="k">- level:</span> <span class="h">RequestResponse</span>
+    <span class="k">resources:</span>
+    <span class="k">- group:</span> <span class="s">""</span>
+      <span class="k">resources:</span> <span class="s">["secrets"]</span>
+
+  <span class="c"># HIGH: Pod exec, attach, portforward</span>
+  <span class="k">- level:</span> <span class="h">RequestResponse</span>
+    <span class="k">resources:</span>
+    <span class="k">- group:</span> <span class="s">""</span>
+      <span class="k">resources:</span> <span class="s">["pods/exec", "pods/attach", "pods/portforward"]</span>
+
+  <span class="c"># LOW: Internal system traffic — suppress it</span>
+  <span class="k">- level:</span> <span class="s">None</span>
+    <span class="k">users:</span> <span class="s">["system:kube-proxy", "system:node"]</span>
+
+  <span class="c"># DEFAULT: Metadata only for everything else</span>
+  <span class="k">- level:</span> <span class="s">Metadata</span></pre>
+  </div>
+
+  <div class="scenario">
+    <div class="scenario-label good">Mature Posture</div>
+    <h4>What "control plane hardening is done" actually looks like</h4>
+    <p>Automated CIS benchmark runs in CI for cluster provisioning changes. Audit logs shipping to SIEM with real-time alerting on high-signal events. etcd network-isolated and mTLS-authenticated with encrypted-at-rest secrets. Kubelet anonymous auth disabled cluster-wide. Certificate rotation automated. NodeRestriction admission enabled. And crucially — documentation of every intentional deviation from default security settings, with an owner and a review date.</p>
+  </div>
+
+  <p>The final post in this series moves down from the cluster infrastructure layer into the workload layer — pod-level security, network isolation, and the runtime detection systems that catch what everything else misses.</p>
+
+</div>
+
+<!-- SIDEBAR -->
+<div class="sidebar">
+  <div class="sidebar-card">
+    <div class="sidebar-title">In This Post</div>
+    <ul class="sidebar-list">
+      <li><span class="num">01</span>The RBAC mental model problem</li>
+      <li><span class="num">02</span>Four subjects, one that matters most</li>
+      <li><span class="num">03</span>RBAC design patterns at scale</li>
+      <li><span class="num">04</span>API server hardening</li>
+      <li><span class="num">05</span>Kubelet security configuration</li>
+      <li><span class="num">06</span>etcd: the hidden attack surface</li>
+      <li><span class="num">07</span>Engineering a useful audit policy</li>
+    </ul>
+  </div>
+  <div class="sidebar-aside">
+    <strong>Key Command</strong>
+    Audit what any subject can do:<br><br>
+    <code style="font-size:11px;word-break:break-all;">kubectl auth can-i --list --as=system:serviceaccount:NAMESPACE:NAME</code><br><br>
+    Run this against your ServiceAccounts regularly.
+  </div>
+  <div class="sidebar-card" style="margin-top:16px;">
+    <div class="sidebar-title">Common Mistakes</div>
+    <ul class="sidebar-list">
+      <li><span class="num">✕</span>Using cluster-admin for CI service accounts</li>
+      <li><span class="num">✕</span>Wildcard verbs in production Roles</li>
+      <li><span class="num">✕</span>etcd reachable from workload namespaces</li>
+      <li><span class="num">✕</span>No audit policy — or one that logs everything</li>
+      <li><span class="num">✕</span>Kubelet anonymous auth left enabled</li>
+    </ul>
+  </div>
+</div>
+
+</div><!-- end content-wrap -->
+
+<div class="post-footer">
+  <span class="footer-back">← Post 1: Supply Chain &amp; Image Security</span>
+  <div class="footer-next">
+    <span class="next-label">Final Post</span>
+    <span class="next-title">Pod Security &amp; Runtime Threat Detection →</span>
+  </div>
+</div>
+
+</body>
+</html>
