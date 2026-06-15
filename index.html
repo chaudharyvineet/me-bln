@@ -1,1121 +1,398 @@
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Vineet Chaudhary</title>
-
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link
-        href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;500;600&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500&display=swap"
-        rel="stylesheet">
-
-    <style>
-        :root {
-            --bg-color: #FAFAFA;
-            --text-primary: #111111;
-            --text-secondary: #777777;
-            --accent: #4A5D6B;
-            /* Sophisticated deep slate blue/grey */
-
-            --font-display: 'Cormorant Garamond', serif;
-            --font-body: 'DM Sans', sans-serif;
-
-            --ease: 1.0s cubic-bezier(0.16, 1, 0.3, 1);
-            --ease-fast: 0.5s cubic-bezier(0.16, 1, 0.3, 1);
-        }
-
-        * {
-            box-sizing: border-box;
-            margin: 0;
-            padding: 0;
-            user-select: none;
-        }
-
-        html,
-        body {
-            background-color: var(--bg-color);
-            color: var(--text-primary);
-            font-family: var(--font-body);
-            overflow: hidden;
-            width: 100vw;
-            height: 100vh;
-            -webkit-font-smoothing: antialiased;
-        }
-
-        #particle-canvas {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            z-index: 1;
-            pointer-events: none;
-        }
-
-        /* -----------------------
-           HOME CANVAS
-           ----------------------- */
-        #home-view {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            z-index: 10;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            transition: opacity var(--ease), transform var(--ease);
-        }
-
-        #home-view.hidden {
-            opacity: 0;
-            pointer-events: none;
-            transform: scale(0.96);
-        }
-
-        .centerpiece {
-            text-align: center;
-            position: relative;
-        }
-
-        .massive-name {
-            font-family: var(--font-display);
-            font-size: clamp(4rem, 12vh, 15rem);
-            font-weight: 500;
-            line-height: 0.85;
-            letter-spacing: -0.02em;
-            color: var(--text-primary);
-            cursor: default;
-        }
-
-        .massive-name span {
-            color: var(--accent);
-            font-weight: 400;
-        }
-
-        .sub-title {
-            position: absolute;
-            bottom: -3vh;
-            right: 0;
-            font-family: var(--font-body);
-            text-transform: uppercase;
-            letter-spacing: 0.2em;
-            font-size: clamp(0.6rem, 1vh, 0.9rem);
-            color: var(--text-secondary);
-        }
-
-        /* Nav Nodes */
-        .nav-node {
-            position: absolute;
-            font-family: var(--font-display);
-            font-size: clamp(2rem, 5vh, 4rem);
-            font-weight: 400;
-            color: var(--text-secondary);
-            cursor: pointer;
-            transition: color var(--ease-fast), transform var(--ease-fast);
-            z-index: 20;
-        }
-
-        .nav-node:hover {
-            color: var(--text-primary);
-            transform: scale(1.05);
-        }
-
-        #nav-about {
-            top: 18%;
-            left: 12%;
-        }
-
-        #nav-work {
-            top: 60%;
-            right: 15%;
-        }
-
-        #nav-project {
-            top: 45%;
-            left: 8%;
-            font-size: clamp(1.8rem, 4.5vh, 3.5rem);
-        }
-
-        #nav-stack {
-            bottom: 15%;
-            left: 25%;
-        }
-
-        #nav-contact {
-            top: 22%;
-            right: 25%;
-        }
-
-        #nav-blogs {
-            bottom: 18%;
-            right: 12%;
-            font-size: clamp(1.8rem, 4.5vh, 3.5rem);
-        }
-
-        /* -----------------------
-           CONTENT POSTERS
-           ----------------------- */
-        .poster-view {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            z-index: 15;
-            background-color: var(--bg-color);
-            opacity: 0;
-            pointer-events: none;
-            transform: translateY(60px);
-            transition: opacity var(--ease), transform var(--ease);
-            padding: 4vh 6vw;
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            overflow: hidden;
-        }
-
-        .poster-view.active {
-            opacity: 1;
-            pointer-events: all;
-            transform: translateY(0);
-        }
-
-        .close-btn {
-            position: fixed;
-            top: 4vh;
-            right: 4vw;
-            font-family: var(--font-body);
-            font-size: 1.1rem;
-            text-transform: uppercase;
-            letter-spacing: 0.1em;
-            cursor: pointer;
-            color: var(--text-primary);
-            z-index: 30;
-            transition: color var(--ease-fast);
-            font-weight: 500;
-        }
-
-        .close-btn:hover {
-            color: var(--accent);
-        }
-
-        .poster-title {
-            font-family: var(--font-display);
-            font-size: 22vh;
-            font-weight: 600;
-            line-height: 0.8;
-            letter-spacing: -0.02em;
-            color: rgba(17, 17, 17, 0.03);
-            position: absolute;
-            top: 1vh;
-            left: -1vw;
-            z-index: 0;
-            pointer-events: none;
-            text-transform: capitalize;
-        }
-
-        .poster-content {
-            position: relative;
-            z-index: 1;
-            width: 100%;
-            user-select: text;
-        }
-
-        /* ABOUT */
-        .huge-text-about {
-            font-family: var(--font-display);
-            font-size: clamp(2rem, 5vh, 4rem);
-            line-height: 1.1;
-            color: var(--text-primary);
-            max-width: 85vw;
-            font-weight: 400;
-        }
-
-        .huge-text-about span {
-            color: var(--accent);
-        }
-
-        .about-sub {
-            margin-top: 4vh;
-            font-size: clamp(1rem, 2vh, 1.3rem);
-            color: var(--text-secondary);
-            max-width: 60vw;
-            line-height: 1.5;
-        }
-
-        /* WORK */
-        .work-flow {
-            display: grid;
-            grid-template-columns: repeat(4, 1fr);
-            gap: 2vw;
-            height: 60vh;
-            align-items: center;
-        }
-
-        .work-item {
-            position: relative;
-            padding-left: 2vw;
-            border-left: 1px solid rgba(0, 0, 0, 0.1);
-        }
-
-        .work-year {
-            font-family: var(--font-body);
-            font-size: 0.8rem;
-            text-transform: uppercase;
-            letter-spacing: 0.1em;
-            color: var(--text-secondary);
-            margin-bottom: 1vh;
-            font-weight: 500;
-        }
-
-        .work-company {
-            font-family: var(--font-display);
-            font-size: clamp(2rem, 4vh, 3rem);
-            font-weight: 500;
-            line-height: 1;
-            margin-bottom: 0.5vh;
-        }
-
-        .work-role {
-            font-family: var(--font-body);
-            font-size: clamp(0.9rem, 1.5vh, 1.1rem);
-            color: var(--accent);
-            margin-bottom: 1.5vh;
-            font-weight: 500;
-        }
-
-        .work-desc {
-            font-family: var(--font-body);
-            font-size: clamp(0.85rem, 1.4vh, 1rem);
-            line-height: 1.5;
-            color: var(--text-primary);
-            font-weight: 300;
-        }
-
-        .edu-item {
-            margin-top: 4vh;
-            padding-top: 4vh;
-            border-top: 1px solid rgba(0, 0, 0, 0.1);
-            grid-column: span 4;
-            display: flex;
-            justify-content: space-between;
-        }
-
-        .edu-node {
-            flex: 1;
-            margin-right: 2vw;
-        }
-
-        .edu-node:last-child {
-            margin-right: 0;
-        }
-
-        /* CAPABILITIES */
-        .stack-cloud {
-            display: grid;
-            grid-template-columns: repeat(4, 1fr);
-            gap: 3vw;
-            height: 50vh;
-            align-items: center;
-        }
-
-        .stack-cluster h3 {
-            font-family: var(--font-display);
-            font-size: clamp(1.8rem, 3.5vh, 2.5rem);
-            font-weight: 500;
-            margin-bottom: 1vh;
-            border-bottom: 1px solid rgba(0, 0, 0, 0.1);
-            padding-bottom: 0.5vh;
-        }
-
-        .stack-cluster p {
-            font-size: clamp(0.9rem, 1.6vh, 1.1rem);
-            line-height: 1.5;
-            color: var(--text-secondary);
-            font-weight: 300;
-        }
-
-        /* PROJECT */
-        .project-layout {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 5vw;
-            align-items: center;
-        }
-
-        .project-meta {
-            font-family: var(--font-body);
-            font-size: 0.85rem;
-            text-transform: uppercase;
-            letter-spacing: 0.1em;
-            color: var(--accent);
-            margin-bottom: 2vh;
-            font-weight: 500;
-        }
-
-        .project-title {
-            font-family: var(--font-display);
-            font-size: clamp(3rem, 7vh, 6rem);
-            font-weight: 500;
-            line-height: 1;
-            margin-bottom: 4vh;
-            text-transform: capitalize;
-        }
-
-        .project-desc {
-            font-size: clamp(1rem, 2vh, 1.3rem);
-            line-height: 1.6;
-            max-width: 600px;
-            color: var(--text-primary);
-        }
-
-        .project-tags {
-            margin-top: 4vh;
-            display: flex;
-            gap: 1vw;
-            flex-wrap: wrap;
-        }
-
-        .tag {
-            font-family: var(--font-body);
-            background: rgba(0, 0, 0, 0.04);
-            color: var(--text-primary);
-            padding: 0.6vh 1.2vw;
-            font-size: 0.85rem;
-            text-transform: uppercase;
-            font-weight: 500;
-            letter-spacing: 0.05em;
-            border-radius: 4px;
-        }
-
-        /* CONTACT */
-        .contact-layout {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            height: 60vh;
-        }
-
-        .contact-huge-links {
-            display: flex;
-            flex-direction: column;
-            gap: 2vh;
-        }
-
-        .contact-huge-links a {
-            font-family: var(--font-display);
-            font-size: clamp(3rem, 8vh, 8rem);
-            font-weight: 400;
-            color: var(--text-primary);
-            text-decoration: none;
-            line-height: 1;
-            transition: color var(--ease-fast), padding-left var(--ease-fast);
-        }
-
-        .contact-huge-links a:hover {
-            color: var(--accent);
-            padding-left: 1vw;
-        }
-
-        .certifications {
-            font-family: var(--font-body);
-            text-align: right;
-        }
-
-        .certifications h3 {
-            font-size: 0.9rem;
-            text-transform: uppercase;
-            letter-spacing: 0.2em;
-            color: var(--text-secondary);
-            margin-bottom: 2vh;
-        }
-
-        .cert-list {
-            font-family: var(--font-display);
-            font-size: clamp(1.5rem, 3vh, 2rem);
-            color: var(--text-primary);
-            line-height: 1.2;
-        }
-
-        .cert-list span {
-            color: var(--accent);
-        }
-
-        /* BLOGS */
-        .blogs-layout {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 4vw;
-            align-items: start;
-            padding-top: 2vh;
-        }
-
-        .blogs-header {
-            font-family: var(--font-display);
-            font-size: clamp(1.5rem, 4vh, 3rem);
-            font-weight: 400;
-            line-height: 1.1;
-            margin-bottom: 6vh;
-            max-width: 100%;
-        }
-
-        .blogs-header span {
-            color: var(--accent);
-        }
-
-        .blog-list {
-            display: flex;
-            flex-direction: column;
-            gap: 3vh;
-        }
-
-        .blog-entry {
-            display: flex;
-            flex-direction: column;
-            gap: 0.4vh;
-            padding-bottom: 2.5vh;
-            border-bottom: 1px solid rgba(0, 0, 0, 0.08);
-            cursor: pointer;
-            transition: padding-left var(--ease-fast);
-        }
-
-        .blog-entry:last-child {
-            border-bottom: none;
-        }
-
-        .blog-entry:hover {
-            padding-left: 0.6vw;
-        }
-
-        .blog-entry:hover .blog-title {
-            color: var(--accent);
-        }
-
-        .blog-date {
-            font-family: var(--font-body);
-            font-size: 0.75rem;
-            text-transform: uppercase;
-            letter-spacing: 0.15em;
-            color: var(--text-secondary);
-            font-weight: 500;
-        }
-
-        .blog-title {
-            font-family: var(--font-display);
-            font-size: clamp(1.4rem, 2.8vh, 2.2rem);
-            font-weight: 500;
-            line-height: 1.1;
-            color: var(--text-primary);
-            transition: color var(--ease-fast);
-        }
-
-        .blog-summary {
-            font-family: var(--font-body);
-            font-size: clamp(0.8rem, 1.4vh, 0.95rem);
-            color: var(--text-secondary);
-            line-height: 1.5;
-            font-weight: 300;
-            max-width: 90%;
-        }
-
-        .blog-tags {
-            display: flex;
-            gap: 0.6vw;
-            flex-wrap: wrap;
-            margin-top: 0.6vh;
-        }
-
-        .blog-tag {
-            font-family: var(--font-body);
-            font-size: 0.72rem;
-            text-transform: uppercase;
-            letter-spacing: 0.08em;
-            font-weight: 500;
-            color: var(--accent);
-            border: 1px solid rgba(74, 93, 107, 0.3);
-            padding: 0.3vh 0.6vw;
-            border-radius: 3px;
-        }
-
-        /* -----------------------
-           MOBILE OVERRIDES
-           ----------------------- */
-        @media (max-width: 768px) {
-
-            /* --- Landing page: declutter nav nodes --- */
-            .nav-node {
-                font-size: clamp(1.4rem, 5vw, 2rem);
-            }
-
-            #nav-about {
-                top: 8%;
-                left: 5%;
-            }
-
-            #nav-contact {
-                top: 8%;
-                right: 5%;
-            }
-
-            #nav-project {
-                top: 32%;
-                left: 5%;
-                font-size: clamp(1.2rem, 4.5vw, 1.8rem);
-            }
-
-            #nav-work {
-                top: 32%;
-                right: 5%;
-            }
-
-            #nav-stack {
-                bottom: 18%;
-                left: 5%;
-            }
-
-            #nav-blogs {
-                bottom: 18%;
-                right: 5%;
-                font-size: clamp(1.2rem, 4.5vw, 1.8rem);
-            }
-
-            .massive-name {
-                font-size: clamp(3rem, 14vw, 6rem);
-            }
-
-            .sub-title {
-                font-size: clamp(0.55rem, 2vw, 0.75rem);
-                letter-spacing: 0.12em;
-            }
-
-            /* --- All poster views: allow scrolling, start from top --- */
-            .poster-view {
-                overflow-y: auto;
-                overflow-x: hidden;
-                justify-content: flex-start;
-                padding: 14vw 6vw 8vw;
-                -webkit-overflow-scrolling: touch;
-            }
-
-            .poster-title {
-                font-size: 30vw;
-                top: -2vh;
-            }
-
-            /* --- About --- */
-            .huge-text-about {
-                font-size: clamp(1.5rem, 5.5vw, 2.5rem);
-                max-width: 100%;
-                line-height: 1.25;
-            }
-
-            .about-sub {
-                max-width: 100%;
-                font-size: clamp(0.9rem, 3.5vw, 1.1rem);
-                margin-top: 3vh;
-            }
-
-            /* --- Research --- */
-            .project-layout {
-                grid-template-columns: 1fr;
-                gap: 3vh;
-            }
-
-            .project-title {
-                font-size: clamp(2rem, 8vw, 3.5rem);
-            }
-
-            .project-desc {
-                font-size: clamp(0.9rem, 3.5vw, 1.1rem);
-                max-width: 100%;
-            }
-
-            .project-tags {
-                gap: 2vw;
-            }
-
-            .tag {
-                padding: 0.8vw 2.5vw;
-                font-size: 0.75rem;
-            }
-
-            /* --- Experience --- */
-            .work-flow {
-                display: flex;
-                flex-direction: column;
-                height: auto;
-                gap: 4vh;
-            }
-
-            .work-item {
-                padding-left: 4vw;
-                border-left: 2px solid rgba(0, 0, 0, 0.1);
-            }
-
-            .work-company {
-                font-size: clamp(1.8rem, 6vw, 2.5rem);
-            }
-
-            .edu-item {
-                flex-direction: column;
-                gap: 3vh;
-                grid-column: unset;
-                margin-top: 2vh;
-                padding-top: 3vh;
-            }
-
-            .edu-node {
-                margin-right: 0;
-            }
-
-            /* --- Capabilities --- */
-            .stack-cloud {
-                display: flex;
-                flex-direction: column;
-                height: auto;
-                gap: 3.5vh;
-            }
-
-            .stack-cluster h3 {
-                font-size: clamp(1.4rem, 5vw, 2rem);
-            }
-
-            .stack-cluster p {
-                font-size: clamp(0.85rem, 3.5vw, 1rem);
-            }
-
-            /* --- Contact --- */
-            .contact-layout {
-                flex-direction: column;
-                height: auto;
-                gap: 5vh;
-                align-items: flex-start;
-            }
-
-            .contact-huge-links a {
-                font-size: clamp(2.5rem, 12vw, 5rem);
-            }
-
-            .certifications {
-                text-align: left;
-            }
-
-            .cert-list {
-                font-size: clamp(1.2rem, 5vw, 1.8rem);
-            }
-
-            /* --- Writing / Blogs --- */
-            .blogs-layout {
-                grid-template-columns: 1fr;
-                gap: 2vh;
-            }
-
-            .blog-tags {
-                gap: 1.5vw;
-            }
-
-            .blog-tag {
-                padding: 0.4vh 2vw;
-            }
-        }
-
-        /* Extra-small phones */
-        @media (max-width: 390px) {
-            .poster-view {
-                padding: 16vw 5vw 8vw;
-            }
-
-            .huge-text-about {
-                font-size: clamp(1.3rem, 5vw, 2rem);
-            }
-        }
-    </style>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+<title>Vineet Chaudhary</title>
+<style>
+/* ============================================================
+   Vineet Chaudhary — shared stylesheet
+   Pure HTML/CSS, minimal. Used by index.html + all blog pages.
+   ============================================================ */
+
+:root {
+  --ink: #111;
+  --muted: #828282;
+  --link: #1772d0;
+  --rule: #e2e2e2;
+  --code-bg: #f6f7f9;
+  --note-bg: #f3f7fc;
+  --warn-bg: #fcf6ee;
+  --warn-bar: #d99a26;
+}
+
+* { box-sizing: border-box; }
+
+html { -webkit-text-size-adjust: 100%; }
+
+body {
+  font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+  font-size: 16px;
+  line-height: 1.6;
+  color: var(--ink);
+  background: #fff;
+  max-width: 760px;
+  margin: 42px auto 100px;
+  padding: 0 22px;
+}
+
+a { color: var(--link); text-decoration: none; }
+a:hover { text-decoration: underline; }
+p { margin: 0 0 15px; }
+
+hr {
+  border: 0;
+  border-top: 1px solid var(--rule);
+  margin: 28px 0 32px;
+}
+
+/* ---------- header (index) ---------- */
+header.site { text-align: center; margin-bottom: 8px; }
+header.site h1 {
+  font-size: 31px; font-weight: 700; letter-spacing: -0.5px; margin: 0 0 4px;
+}
+header.site h2 {
+  font-size: 17px; font-weight: 400; color: var(--muted); margin: 0 0 16px;
+}
+.social { display: flex; justify-content: center; gap: 18px; align-items: center; }
+.social a { display: inline-flex; color: #555; }
+.social a:hover { color: #000; text-decoration: none; }
+.social svg { width: 20px; height: 20px; fill: currentColor; display: block; }
+
+/* ---------- lowercase section labels ---------- */
+h3.section {
+  font-size: 15px; font-weight: 700; text-transform: lowercase;
+  letter-spacing: 0.3px; margin: 46px 0 18px;
+}
+
+/* ---------- timeline rows (index) ---------- */
+.row { display: flex; margin-bottom: 26px; }
+.row .date { flex: 0 0 96px; color: var(--muted); font-size: 14px; padding-top: 2px; }
+.row .body { flex: 1; min-width: 0; }
+.row .body .role { font-weight: 700; margin: 0 0 2px; }
+.row .body .org { color: var(--muted); font-size: 14px; margin: 0 0 7px; }
+.tags { color: var(--muted); font-size: 13px; margin-top: 7px; }
+
+/* ---------- capabilities (index) ---------- */
+.cap { margin-bottom: 16px; }
+.cap .name { font-weight: 700; margin: 0 0 2px; }
+.cap p { margin: 0; color: #333; }
+
+/* ---------- writing list (index) ---------- */
+.post { margin-bottom: 18px; }
+.post .meta { color: var(--muted); font-size: 13px; }
+.post .title { font-weight: 700; }
+.post p { margin: 2px 0 0; color: #333; font-size: 15px; }
+
+.certs div, .langs div { margin-bottom: 3px; color: #333; }
+
+/* ============================================================
+   BLOG / ARTICLE STYLES
+   ============================================================ */
+
+.blog-nav {
+  display: flex; justify-content: space-between; align-items: baseline;
+  font-size: 14px; margin-bottom: 30px; gap: 12px; flex-wrap: wrap;
+}
+.blog-nav .series { color: var(--muted); }
+
+article h1.title {
+  font-size: 30px; font-weight: 700; line-height: 1.25;
+  letter-spacing: -0.5px; margin: 0 0 10px;
+}
+article h1.title em { font-style: italic; font-weight: 700; }
+.byline { color: var(--muted); font-size: 14px; margin: 0 0 26px; }
+.lede { font-size: 18px; line-height: 1.55; color: #2a2a2a; margin: 0 0 28px; }
+
+article h2 {
+  font-size: 22px; font-weight: 700; letter-spacing: -0.3px;
+  margin: 40px 0 14px; line-height: 1.3;
+}
+article h3 { font-size: 17px; font-weight: 700; margin: 28px 0 10px; }
+article h4 { font-size: 15px; font-weight: 700; margin: 20px 0 8px; }
+
+.eyebrow {
+  font-size: 12px; font-weight: 700; letter-spacing: 1px;
+  text-transform: uppercase; color: var(--muted);
+  margin: 40px 0 -4px;
+}
+
+ul, ol { padding-left: 22px; margin: 0 0 15px; }
+li { margin-bottom: 6px; }
+
+/* inline code + code blocks */
+code {
+  font-family: "SF Mono", Menlo, Consolas, monospace;
+  font-size: 0.86em; background: var(--code-bg);
+  padding: 1px 5px; border-radius: 3px;
+}
+.code-label {
+  font-family: "SF Mono", Menlo, Consolas, monospace;
+  font-size: 12px; color: var(--muted); margin: 22px 0 0;
+}
+pre {
+  background: var(--code-bg); border: 1px solid var(--rule);
+  border-radius: 6px; padding: 16px 18px; overflow-x: auto;
+  margin: 6px 0 20px; line-height: 1.5;
+}
+pre code {
+  background: none; padding: 0; font-size: 13px; color: #1f1f1f;
+}
+
+/* tables */
+table {
+  width: 100%; border-collapse: collapse; font-size: 14px;
+  margin: 8px 0 24px;
+}
+th, td { text-align: left; padding: 8px 12px; border-bottom: 1px solid var(--rule); }
+th { font-weight: 700; border-bottom: 2px solid #ccc; }
+td code { font-size: 12px; }
+
+/* callouts */
+.callout {
+  background: var(--note-bg); border-left: 3px solid var(--link);
+  padding: 13px 16px; margin: 20px 0; border-radius: 0 5px 5px 0;
+  font-size: 15px;
+}
+.callout.warn { background: var(--warn-bg); border-left-color: var(--warn-bar); }
+.callout .ctitle { font-weight: 700; display: block; margin-bottom: 3px; }
+.callout p { margin: 0; }
+
+/* flow diagrams */
+.flow {
+  display: flex; flex-wrap: wrap; align-items: stretch; gap: 10px;
+  margin: 8px 0 26px; padding: 18px; border: 1px solid var(--rule);
+  border-radius: 8px; background: #fafafa;
+}
+.flow .cap-title { flex-basis: 100%; font-size: 13px; color: var(--muted); margin-bottom: 4px; }
+.flow .node {
+  flex: 1; min-width: 110px; text-align: center; background: #fff;
+  border: 1px solid var(--rule); border-radius: 6px; padding: 12px 10px;
+  font-size: 13px;
+}
+.flow .node .ico { font-size: 20px; display: block; margin-bottom: 5px; }
+.flow .node strong { display: block; font-size: 13px; margin-bottom: 2px; }
+.flow .node span.sub { color: var(--muted); font-size: 12px; }
+.flow .arrow { display: flex; align-items: center; color: var(--muted); font-size: 18px; }
+
+/* stat row */
+.stats {
+  display: flex; flex-wrap: wrap; gap: 26px; margin: 8px 0 28px;
+  padding: 18px; border: 1px solid var(--rule); border-radius: 8px;
+}
+.stats .stat { flex: 1; min-width: 120px; }
+.stats .num { font-size: 26px; font-weight: 700; letter-spacing: -0.5px; }
+.stats .lbl { color: var(--muted); font-size: 13px; margin-top: 2px; }
+
+/* simple metric bars (results) */
+.bar { display: flex; align-items: center; gap: 10px; margin: 6px 0; font-size: 14px; }
+.bar .bl { flex: 0 0 170px; }
+.bar .bt { flex: 1; height: 8px; background: #eee; border-radius: 4px; overflow: hidden; }
+.bar .bf { height: 100%; background: var(--link); }
+.bar .bv { flex: 0 0 56px; text-align: right; font-weight: 700; }
+
+/* post footer nav */
+.post-footer {
+  display: flex; justify-content: space-between; gap: 16px;
+  margin-top: 48px; padding-top: 20px; border-top: 1px solid var(--rule);
+  font-size: 14px; flex-wrap: wrap;
+}
+.refs { font-size: 13px; color: #444; margin-top: 30px; }
+.refs li { margin-bottom: 8px; }
+
+@media (max-width: 540px) {
+  .row { flex-direction: column; }
+  .row .date { margin-bottom: 4px; }
+  .flow .arrow { display: none; }
+}
+
+</style>
 </head>
-
 <body>
 
-    <canvas id="particle-canvas"></canvas>
+<header class="site">
+  <h1>Vineet Chaudhary</h1>
+  <h2>Security Engineer &amp; Architect | Berlin, DE</h2>
+  <div class="social">
+    <a href="mailto:vineetchaudhary131@gmail.com" aria-label="Email" title="Email">
+      <svg viewBox="0 0 24 24"><path d="M2 4h20v16H2V4zm2 2v.4l8 5 8-5V6H4zm16 2.7-7.5 4.7a1 1 0 0 1-1 0L4 8.7V18h16V8.7z"/></svg>
+    </a>
+    <a href="https://www.linkedin.com/in/chaudharyvineet9/" aria-label="LinkedIn" title="LinkedIn">
+      <svg viewBox="0 0 24 24"><path d="M4.98 3.5A2.5 2.5 0 1 1 0 3.5a2.5 2.5 0 0 1 4.98 0zM.5 8h4V24h-4V8zM8 8h3.8v2.2h.05c.53-1 1.83-2.2 3.77-2.2C19.6 8 21 10.05 21 14v10h-4v-8.7c0-2.08-.74-3.5-2.6-3.5-1.42 0-2.26.96-2.63 1.88-.14.33-.17.78-.17 1.24V24H8V8z"/></svg>
+    </a>
+    <a href="https://medium.com/@vineetchaudhary9" aria-label="Medium" title="Medium">
+      <svg viewBox="0 0 24 24"><path d="M13.54 12a6.8 6.8 0 0 1-6.77 6.82A6.8 6.8 0 0 1 0 12a6.8 6.8 0 0 1 6.77-6.82A6.8 6.8 0 0 1 13.54 12zm7.42 0c0 3.54-1.51 6.42-3.38 6.42S14.2 15.54 14.2 12s1.51-6.42 3.38-6.42S20.96 8.46 20.96 12zM24 12c0 3.17-.53 5.75-1.19 5.75s-1.19-2.58-1.19-5.75.53-5.75 1.19-5.75S24 8.83 24 12z"/></svg>
+    </a>
+    <a href="https://x.com/vineetch_" aria-label="X (Twitter)" title="X / Twitter">
+      <svg viewBox="0 0 24 24"><path d="M18.9 1.5h3.68l-8.05 9.2L24 22.5h-7.4l-5.8-7.58-6.64 7.58H.48l8.6-9.83L0 1.5h7.6l5.24 6.93L18.9 1.5zm-1.29 18.8h2.04L6.48 3.6H4.3l13.31 16.7z"/></svg>
+    </a>
+    <a href="https://github.com/chaudharyvineet/" aria-label="GitHub" title="GitHub">
+      <svg viewBox="0 0 24 24"><path d="M12 .5a12 12 0 0 0-3.8 23.4c.6.1.8-.26.8-.58v-2c-3.34.72-4.04-1.6-4.04-1.6-.55-1.4-1.34-1.77-1.34-1.77-1.1-.74.08-.73.08-.73 1.2.09 1.84 1.24 1.84 1.24 1.07 1.84 2.8 1.3 3.49 1 .1-.78.42-1.3.76-1.6-2.67-.3-5.47-1.34-5.47-5.95 0-1.32.47-2.4 1.24-3.24-.12-.3-.54-1.52.12-3.18 0 0 1-.32 3.3 1.24a11.5 11.5 0 0 1 6 0c2.3-1.56 3.3-1.24 3.3-1.24.66 1.66.24 2.88.12 3.18.77.84 1.23 1.92 1.23 3.24 0 4.62-2.8 5.64-5.48 5.94.43.37.81 1.1.81 2.22v3.29c0 .32.21.69.82.57A12 12 0 0 0 12 .5z"/></svg>
+    </a>
+  </div>
+</header>
 
-    <!-- HOME CANVAS -->
-    <div id="home-view">
-        <div class="nav-node" id="nav-about" onclick="openNode('about')">About</div>
-        <div class="nav-node" id="nav-work" onclick="openNode('work')">Experience</div>
-        <div class="nav-node" id="nav-project" onclick="openNode('project')">Research</div>
-        <div class="nav-node" id="nav-stack" onclick="openNode('stack')">Capabilities</div>
-        <div class="nav-node" id="nav-contact" onclick="openNode('contact')">Connect</div>
-        <div class="nav-node" id="nav-blogs" onclick="openNode('blogs')">Writing</div>
+<hr>
 
-        <div class="centerpiece">
-            <h1 class="massive-name">Vineet<br><span>Chaudhary</span></h1>
-            <div class="sub-title">Security Engineer & Cloud Architect</div>
-        </div>
-    </div>
+<p class="lede">I've been working for 5+ years now in detection engineering, Kubernetes security, and cloud-native infrastructure across AWS, Azure, and GCP.</p>
 
-    <div class="close-btn" id="close-btn" style="opacity: 0; pointer-events: none;" onclick="closeNodes()">Close</div>
+<p>My day-to-day sits at the intersection of cloud, DevOps, and security &mdash; writing Python for detection logic and automation, managing Kubernetes clusters and container security at scale, designing monitoring and alerting pipelines, and embedding compliance controls (GDPR, SOC 2, ISO 27001, NIST) directly into CI/CD workflows. I write Terraform, lead incident response, and run threat modelling sessions with product teams &mdash; often in the same week.</p>
 
-    <!-- POSTERS -->
 
-    <!-- About -->
-    <div class="poster-view" id="view-about">
-        <div class="poster-title">About</div>
-        <div class="poster-content">
-            <div class="huge-text-about">
-                I am a security engineer and cloud architect navigating <span>complex environments.</span> My day-to-day
-                involves writing Python for detection logic, managing Kubernetes clusters at scale, and designing
-                resilient monitoring pipelines.
-            </div>
-            <div class="about-sub">
-                I embed privacy controls (GDPR, SOC 2, ISO 27001, NIST) firmly into CI/CD workflows. Equally comfortable
-                leading incident response, orchestrating threat modeling sessions, or bringing infrastructure under code
-                using Terraform. Based in Berlin.
-            </div>
-        </div>
-    </div>
+<h3 class="section">experience</h3>
 
-    <!-- Work Log -->
-    <div class="poster-view" id="view-work">
-        <div class="poster-title">Experience</div>
-        <div class="poster-content">
-            <div class="work-flow">
+<div class="row">
+  <div class="date">2024 &mdash; 2026</div>
+  <div class="body">
+    <p class="role">Cloud Security Engineer (Werkstudent)</p>
+    <p class="org">Dolby Laboratories &middot; Berlin</p>
+    <p>Embedded in the Dolby Vision engineering squad as cloud-native deployment and systems-design advisor, I used to run secure design reviews for new service architectures. Built automated provisioning and teardown pipelines (Jenkins, AWS Lambda, API Gateway, Python/Boto3) for product testing across multiple OS environments, cutting infrastructure costs by 70%. Wrote a Conan CI integration for internal C++ submodule management&times;. Enforced Kubernetes security controls with OPA and RBAC, eliminating policy gaps before production.</p>
+    <div class="tags">Software Engineering &middot; Cloud Architecture &middot; Security Design &middot; DevOps &middot; Kubernetes &middot; LLM's</div>
+  </div>
+</div>
 
-                <div class="work-item">
-                    <div class="work-year">24 — Now</div>
-                    <div class="work-company">Dolby</div>
-                    <div class="work-role">Cloud Architecture</div>
-                    <div class="work-desc">
-                        Built provisioning pipelines cutting infra costs by 70%. Wrote Conan CI integration reducing
-                        release time 15x. Set up monitoring/alerting via CloudWatch. Embedded deployment advisor for the
-                        Dolby Vision squad.
-                    </div>
-                </div>
+<div class="row">
+  <div class="date">2023 &mdash; 2026</div>
+  <div class="body">
+    <p class="role">M.Sc. Cybersecurity</p>
+    <p class="org">Brandenburg Technical University, Cottbus</p>
+    <p>Thesis: <em>Cross-Layer Invariant Verification Against Kubernetes Policy-Induced Attack Paths.</em></p>
+        <div class="tags">Security Engineering &middot; Cryptography &middot; Secure SDLC &middot; Threat Modelling &middot; Security Laws (GDPR, BSI, NIS2 et.)&middot; Discrete Mathematics &middot; Deep Learning &middot; Neural Networks </div>
+  </div>
+</div>
 
-                <div class="work-item">
-                    <div class="work-year">23 — 23</div>
-                    <div class="work-company">ZS (Senior)</div>
-                    <div class="work-role">Senior Security Engineer</div>
-                    <div class="work-desc">
-                        Ran threat modeling and secure design reviews. Overhauled container security across 1,000+
-                        clusters via Sysdig/Falco. Built Lambda@Edge routing. Drove end-to-end vulnerability management
-                        reducing findings by 63%.
-                    </div>
-                </div>
+<div class="row">
+  <div class="date">2021 &mdash; 2023</div>
+  <div class="body">
+    <p class="role">Security Engineer &rarr; Senior Security Engineer</p>
+    <p class="org">ZS Associates &middot; Pune</p>
+    <p>At ZS Associates I led cloud security engineering for the global cloud infrastructure, setting the vision and building the platform behind it, custom CSPM for unified visibility and automated risk detection, compliance automation across HITRUST, CIS, and NIST, and AWS security centralised across air-gapped OUs. Streamlined the vulnerability management, built automated response workflows, built context into threat detection, ran attack simulations, co-designed bunch of policies, IR plans, KSPM and tons of other security guardrails, GitOps pipeline.</p>
+    <div class="tags">Security Engineering &middot; Cloud Architecture &middot; Security Design &middot; DevOps &middot; Kubernetes &middot; Automation &middot; Compliance &middot; Multi-Cloud &middot; Leadership</div>
+  </div>
+</div>
 
-                <div class="work-item">
-                    <div class="work-year">21 — 23</div>
-                    <div class="work-company">ZS Associates</div>
-                    <div class="work-role">Security Engineer</div>
-                    <div class="work-desc">
-                        Centralised AWS security into a single detection platform. Built Python auto-response workflows
-                        cutting MTTR by 50%. Ran attack simulation for zero-days (Log4j). Co-designed the cloud IR plan.
-                    </div>
-                </div>
+<div class="row">
+  <div class="date">2020 &mdash; 2021</div>
+  <div class="body">
+    <p class="role">Programmer Analyst</p>
+    <p class="org">Cognizant Technology Solutions &middot; Pune</p>
+    <p>Built and maintained infrastructure automation with Terraform and Go for client-facing hybrid cloud on Azure, including PostgreSQL and Kafka provisioning. Managed Azure DevOps CI/CD with JFrog Artifactory for artifact governance and supply-chain controls. Designed Prometheus/Grafana monitoring and wrote reusable IaC modules adopted across project teams.</p>
+    <div class="tags">Cloud Automation &middot; Infrastructure as Code &middot; DevOps &middot; Pipelines &middot; Automation </div>
+  </div>
+</div>
 
-                <div class="work-item">
-                    <div class="work-year">20 — 21</div>
-                    <div class="work-company">Cognizant</div>
-                    <div class="work-role">Cloud & DevOps</div>
-                    <div class="work-desc">
-                        Built infrastructure automation with Terraform and Go on Azure. Managed Azure DevOps/Jenkins
-                        CI/CD with JFrog. Designed Prometheus/Grafana monitoring.
-                    </div>
-                </div>
+<div class="row">
+  <div class="date">2016 &mdash; 2020</div>
+  <div class="body">
+    <p class="role">Bachelor of Engineering (B.E.) Computer Science</p>
+    <p class="org">Chandigarh University, Mohali</p>
+    <p>Cloud Computing Specialisation (IBM).</p>
+    <div class="tags">Mathematics &middot; Programming &middot; Computer Architecture &middot; Operating Systems &middot; Databases &middot; Data Structures and Angorithms &middot; Cloud &middot; Machine Learning </div>
+  </div>
+</div>
 
-                <!-- Education Row -->
-                <div class="edu-item">
-                    <div class="edu-node">
-                        <div class="work-year">23 — Now</div>
-                        <div class="work-company">BTU Cottbus</div>
-                        <div class="work-role">M.Sc. Cybersecurity</div>
-                        <div class="work-desc">Thesis: Evaluating Kubernetes Security Through Policy Effectiveness and
-                            Risk Correlation.</div>
-                    </div>
-                    <div class="edu-node">
-                        <div class="work-year">16 — 20</div>
-                        <div class="work-company">Chandigarh Univ</div>
-                        <div class="work-role">B.E. Computer Science</div>
-                        <div class="work-desc">Cloud Computing Specialisation (IBM).</div>
-                    </div>
-                </div>
+<h3 class="section">projects</h3>
 
-            </div>
-        </div>
-    </div>
+<div class="row">
+  <div class="date">Go</div>
+  <div class="body">
+    <p class="role">KubeTrail (ktrail)</p>
+    <p class="org">CloudTrail-like audit forensics CLI for Kubernetes</p>
+    <p>Solo-built a CloudTrail-inspired Kubernetes audit CLI in Go for forensic analysis of API-server audit logs with no external infrastructure &mdash; a portable single binary with no runtime dependencies. A typed event pipeline parses JSON audit logs to reconstruct resource timelines and detect high-risk mutations; a composable query engine (resource, identity, RBAC, time filters) powers workflows like <code>get</code>, <code>user</code>, <code>who</code>, and <code>rbac-changes</code>, with detection for secret access and RBAC escalation across file/S3/Loki-ready sources.</p>
+    <div class="tags">Go &middot; Kubernetes &middot; Audit &middot; Incident Response</div>
+  </div>
+</div>
 
-    <!-- Project -->
-    <div class="poster-view" id="view-project">
-        <div class="poster-title">Research</div>
-        <div class="poster-content">
-            <div class="project-layout">
-                <div>
-                    <div class="project-meta">Academic Research Study</div>
-                    <h2 class="project-title">5G Network Anomaly Detection</h2>
-                </div>
-                <div>
-                    <div class="project-desc">
-                        Analyzed 5G network datasets to detect anomalous traffic using protocol, packet timing, and
-                        flow-level features. Implemented ML models including kNN, SVM, Random Forest, RNNs, and ResNet
-                        for network intrusion detection.
-                        <br><br>
-                        Developed sequence detection using n-gram packet modeling and federated learning with
-                        global/local models. Generated synthetic traffic with GANs and evaluated model performance.
-                    </div>
-                    <div class="project-tags">
-                        <span class="tag">Machine Learning</span>
-                        <span class="tag">Python</span>
-                        <span class="tag">GANs</span>
-                        <span class="tag">Federated Learning</span>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
+<h3 class="section">research</h3>
 
-    <!-- Capabilities -->
-    <div class="poster-view" id="view-stack">
-        <div class="poster-title">Capabilities</div>
-        <div class="poster-content">
-            <div class="huge-text-about"
-                style="font-size: clamp(1.5rem, 4vh, 3rem); margin-bottom: 6vh; max-width: 100%;">
-                Architectural components & <span>capabilities.</span>
-            </div>
+<div class="row">
+  <div class="date">2024</div>
+  <div class="body">
+    <p class="role"><a href="blog-04-5g-anomaly.html">Anomaly Detection in 5G Networks</a></p>
+    <p class="org">BTU Cottbus &middot; IT Security Chair</p>
+    <p>Comparative study of ML, deep-learning, and federated approaches for detecting anomalous 5G traffic from protocol, packet-timing, and flow-level features. Implemented kNN, SVM, Random Forest, RNNs, and ResNet; built n-gram sequence detection and a federated learning framework, and generated synthetic traffic with GANs for augmentation.</p>
+    <div class="tags">Machine Learning &middot; Python &middot; GANs &middot; Federated Learning</div>
+  </div>
+</div>
 
-            <div class="stack-cloud">
-                <div class="stack-cluster">
-                    <h3>Cloud Architecture</h3>
-                    <p>AWS, Azure, GCP, multi-account architecture, IAM, serverless provisioning, massive networking.
-                    </p>
-                </div>
-                <div class="stack-cluster">
-                    <h3>Detection & Security</h3>
-                    <p>Threat modeling, secure design review, CSPM/CNAPP, penetration testing, SIEM, incident response
-                        telemetry.</p>
-                </div>
-                <div class="stack-cluster">
-                    <h3>Containers & K8s</h3>
-                    <p>Kubernetes (EKS, AKS, GKE), Docker, Sysdig, Falco, runtime behavior analysis, orchestration
-                        structure.</p>
-                </div>
-                <div class="stack-cluster">
-                    <h3>DevSecOps & Code</h3>
-                    <p>Advanced Python, Go, Bash, Node.js. Terraform, CloudFormation, Jenkins, GitHub Actions, JFrog.
-                    </p>
-                </div>
-            </div>
-        </div>
-    </div>
+<h3 class="section">capabilities</h3>
 
-    <!-- Technical Blogs -->
-    <div class="poster-view" id="view-blogs">
-        <div class="poster-title">Writing</div>
-        <div class="poster-content">
-            <div class="huge-text-about"
-                style="font-size: clamp(1.5rem, 4vh, 3rem); margin-bottom: 5vh; max-width: 100%;">
-                Technical <span>writing</span> &amp; research notes.
-            </div>
-            <div class="blogs-layout">
-                <div class="blog-list">
+<div class="cap">
+  <p class="name">Cloud Architecture</p>
+  <p>AWS, Azure, GCP &mdash; multi-account architecture, IAM, networking, serverless provisioning, system design.</p>
+</div>
+<div class="cap">
+  <p class="name">Detection &amp; Security</p>
+  <p>Threat modeling, secure design review, detection engineering, secure SDLC, CSPM/CNAPP/KSPM, penetration testing, SIEM, vulnerability management, incident response, privacy-by-design, DPIAs.</p>
+</div>
+<div class="cap">
+  <p class="name">Containers &amp; K8s</p>
+  <p>Kubernetes (EKS, AKS, GKE), Docker, Sysdig, Falco, Cilium, Istio, Helm, Pod Security Standards, AppArmor, admission controllers, OPA/Gatekeeper, runtime protection.</p>
+</div>
+<div class="cap">
+  <p class="name">DevSecOps &amp; Code</p>
+  <p>Terraform, CloudFormation, Jenkins, GitLab CI, GitHub Actions, Azure Pipelines, JFrog, IaC security, GitOps. Python (advanced), Go, Bash, Node.js, C++.</p>
+</div>
+<div class="cap">
+  <p class="name">Compliance &amp; Governance</p>
+  <p>GDPR, DORA, SOC 2, NIST, ISO 27001, HIPAA, HITRUST, PCI-DSS, MITRE ATT&amp;CK.</p>
+</div>
+<div class="cap">
+  <p class="name">Observability &amp; Tooling</p>
+  <p>Prometheus, Grafana, ELK, CloudWatch, Datadog. Wiz, Tenable, Burp Suite, Nmap, GuardDuty, Security Hub, Inspector, Prisma, Splunk.</p>
+</div>
+<div class="cap">
+  <p class="name">ML &amp; AI</p>
+  <p>Machine Learning, Deep Learning, GANs, Federated Learning, LLM's</p>
+</div>
 
-                    <a class="blog-entry" href="blog-01-image-security.html" target="_blank"
-                        style="text-decoration:none;color:inherit;">
-                        <div class="blog-date">January 2026 &mdash; Supply Chain</div>
-                        <div class="blog-title">From Supply Chain to Runtime: The Full Arc of Container Image Security
-                        </div>
-                        <div class="blog-summary">Container image security isn't a single gate — it's a chain of
-                            decisions that begins at your Dockerfile and doesn't end until the last replica terminates.
-                        </div>
-                        <div class="blog-tags">
-                            <span class="blog-tag">Kubernetes</span>
-                            <span class="blog-tag">CI/CD</span>
-                            <span class="blog-tag">Image Scanning</span>
-                        </div>
-                    </a>
+<h3 class="section">writing</h3>
 
-                    <a class="blog-entry" href="blog-02-rbac-controlplane.html" target="_blank"
-                        style="text-decoration:none;color:inherit;">
-                        <div class="blog-date">February 2025 &mdash; Access Control</div>
-                        <div class="blog-title">Access Control at Scale: RBAC, Control Plane Hardening, and the Gaps
-                            Teams Miss</div>
-                        <div class="blog-summary">RBAC is easy to get "basically working" while leaving subtle,
-                            high-blast-radius holes. Here's how senior engineers think about it — and what the control
-                            plane looks like underneath.</div>
-                        <div class="blog-tags">
-                            <span class="blog-tag">RBAC</span>
-                            <span class="blog-tag">etcd</span>
-                            <span class="blog-tag">Audit Logging</span>
-                        </div>
-                    </a>
+<div class="post">
+  <span class="meta">2025 &middot; Kubernetes Hardening Series &middot; Post 1</span><br>
+  <a class="title" href="blog-01-image-security.html">From Supply Chain to Runtime: The Full Arc of Container Image Security</a>
+  <p>Container image security isn't a single gate &mdash; it's a chain of decisions that begins at your Dockerfile and doesn't end until the last replica terminates.</p>
+</div>
+<div class="post">
+  <span class="meta">2025 &middot; Kubernetes Hardening Series &middot; Post 2</span><br>
+  <a class="title" href="blog-02-rbac-controlplane.html">Access Control at Scale: RBAC, Control Plane Hardening, and the Gaps Teams Miss</a>
+  <p>RBAC is easy to get "basically working" while leaving subtle, high-blast-radius holes. How senior engineers think about it &mdash; and what the control plane looks like underneath.</p>
+</div>
+<div class="post">
+  <span class="meta">2025 &middot; Kubernetes Hardening Series &middot; Post 3</span><br>
+  <a class="title" href="blog-03-workload-runtime.html">Workload Security: Pod Constraints, Network Isolation, &amp; Runtime Threat Detection</a>
+  <p>How to constrain what a running pod can do, isolate what it can reach via network policies, and detect anomalous behaviour with syscall-level rules and automated response.</p>
+</div>
+<div class="post">
+  <span class="meta">Research &middot; BTU Cottbus</span><br>
+  <a class="title" href="blog-04-5g-anomaly.html">Anomaly Detection in 5G Networks Using Federated Learning</a>
+  <p>Research notes on n-gram packet modelling and GAN-generated synthetic traffic to train privacy-preserving intrusion detection models on 5G datasets.</p>
+</div>
 
-                </div>
+<h3 class="section">certifications</h3>
+<div class="certs">
+  <div>AWS Solutions Architect &mdash; Associate</div>
+  <div>AWS Certified Security &mdash; Specialty</div>
+  <div>Azure Security Engineer &mdash; AZ-500</div>
+  <div>Certified Kubernetes Administrator &mdash; CKA</div>
+  <div>Certified Kubernetes Security Specialist &mdash; CKS</div>
+  <div>CISSP (pursuing)</div>
+</div>
 
-                <div class="blog-list">
+<h3 class="section">languages</h3>
+<div class="langs">
+  <div>English &mdash; C2, fluent</div>
+  <div>German &mdash; B1</div>
+</div>
 
-                    <a class="blog-entry" href="blog-03-workload-runtime.html" target="_blank"
-                        style="text-decoration:none;color:inherit;">
-                        <div class="blog-date">March 2025 &mdash; Runtime Security</div>
-                        <div class="blog-title">Workload Security: Pod Constraints, Network Isolation, &amp; Runtime
-                            Threat Detection</div>
-                        <div class="blog-summary">How to constrain what a running pod can do, isolate what it can reach
-                            via network policies, and detect anomalous behaviour with syscall-level rules and automated
-                            response.</div>
-                        <div class="blog-tags">
-                            <span class="blog-tag">Falco</span>
-                            <span class="blog-tag">Seccomp</span>
-                            <span class="blog-tag">Network Policy</span>
-                        </div>
-                    </a>
+<h3 class="section">connect</h3>
+<p>
+  <a href="mailto:vineetchaudhary131@gmail.com">Email</a> &middot;
+  <a href="https://www.linkedin.com/in/chaudharyvineet9/">LinkedIn</a> &middot;
+  <a href="https://medium.com/@vineetchaudhary9">Medium</a> &middot;
+  <a href="https://x.com/vineetch_">X</a> &middot;
+  <a href="https://github.com/chaudharyvineet/">GitHub</a>
+</p>
 
-                    <a class="blog-entry" href="blog-04-5g-anomaly.html" target="_blank"
-                        style="text-decoration:none;color:inherit;">
-                        <div class="blog-date">2024 &mdash; ML / Security</div>
-                        <div class="blog-title">Anomaly Detection in 5G Networks Using Federated Learning</div>
-                        <div class="blog-summary">Research notes on applying n-gram packet modelling and GAN-generated
-                            synthetic traffic to train privacy-preserving intrusion detection models on 5G datasets.
-                        </div>
-                        <div class="blog-tags">
-                            <span class="blog-tag">Federated Learning</span>
-                            <span class="blog-tag">5G</span>
-                            <span class="blog-tag">GANs</span>
-                        </div>
-                    </a>
-
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Contact & Certs -->
-    <div class="poster-view" id="view-contact">
-        <div class="poster-title">Connect</div>
-        <div class="poster-content contact-layout">
-            <div class="contact-huge-links">
-                <a href="mailto:vineetchaudhary131@gmail.com" target="_blank">Email</a>
-                <a href="https://www.linkedin.com/in/chaudharyvineet9/" target="_blank">LinkedIn</a>
-                <a href="https://github.com/chaudharyvineet/" target="_blank">GitHub</a>
-            </div>
-
-            <div class="certifications">
-                <h3>Select Certifications</h3>
-                <div class="cert-list">
-                    AWS Solutions Architect <span>(Assoc)</span><br>
-                    AWS Certified Security <span>(Spec)</span><br>
-                    Azure Security Engineer <span>(AZ-500)</span><br>
-                    Kubernetes Security <span>(CKS)</span>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Scripting -->
-    <script>
-        const homeView = document.getElementById('home-view');
-        const posterViews = document.querySelectorAll('.poster-view');
-        const closeBtn = document.getElementById('close-btn');
-
-        function openNode(nodeId) {
-            homeView.classList.add('hidden');
-            closeBtn.style.opacity = '1';
-            closeBtn.style.pointerEvents = 'all';
-            document.getElementById('view-' + nodeId).classList.add('active');
-        }
-
-        function closeNodes() {
-            posterViews.forEach(view => view.classList.remove('active'));
-            closeBtn.style.opacity = '0';
-            closeBtn.style.pointerEvents = 'none';
-            homeView.classList.remove('hidden');
-        }
-
-        // Particles
-        const canvas = document.getElementById('particle-canvas');
-        const ctx = canvas.getContext('2d');
-        let width, height;
-        let particles = [];
-
-        const particleSettings = {
-            count: window.innerWidth < 768 ? 40 : 100,
-            minSize: 0.5,
-            maxSize: 2.0,
-            baseColor: '74, 93, 107' // Slate accent
-        };
-
-        function resizeCanvas() {
-            width = window.innerWidth;
-            height = window.innerHeight;
-            canvas.width = width;
-            canvas.height = height;
-        }
-
-        class Particle {
-            constructor() {
-                this.reset(true);
-            }
-
-            reset(initial = false) {
-                this.x = Math.random() * width;
-                this.y = initial ? Math.random() * height : height + 10;
-                this.size = Math.random() * (particleSettings.maxSize - particleSettings.minSize) + particleSettings.minSize;
-                this.speedY = -(Math.random() * 0.4 + 0.1);
-                this.speedX = (Math.random() - 0.5) * 0.1;
-                this.opacity = Math.random() * 0.3 + 0.05;
-            }
-
-            update() {
-                this.x += this.speedX;
-                this.y += this.speedY;
-
-                if (this.y < -10) {
-                    this.reset();
-                }
-            }
-
-            draw() {
-                ctx.beginPath();
-                ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
-                ctx.fillStyle = `rgba(${particleSettings.baseColor}, ${this.opacity})`;
-                ctx.fill();
-            }
-        }
-
-        function initParticles() {
-            resizeCanvas();
-            particles = [];
-            for (let i = 0; i < particleSettings.count; i++) {
-                particles.push(new Particle());
-            }
-        }
-
-        function animateCanvas() {
-            ctx.clearRect(0, 0, width, height);
-            particles.forEach(p => {
-                p.update();
-                p.draw();
-            });
-            requestAnimationFrame(animateCanvas);
-        }
-
-        window.addEventListener('resize', () => {
-            resizeCanvas();
-        });
-
-        document.addEventListener('DOMContentLoaded', () => {
-            initParticles();
-            animateCanvas();
-
-            // Handle direct links to specific views
-            if (window.location.hash) {
-                const nodeId = window.location.hash.substring(1);
-                const targetView = document.getElementById('view-' + nodeId);
-                if (targetView) {
-                    openNode(nodeId);
-                }
-            }
-        });
-    </script>
 </body>
-
 </html>

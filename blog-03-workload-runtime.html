@@ -1,1173 +1,387 @@
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Workload Security: Pod Constraints, Network Isolation, and Runtime Threat Detection</title>
-  <meta name="description"
-    content="Everything before admission is covered. This post covers what happens after a pod starts: how to constrain what it can do, how to isolate what it can reach, and how to detect when it misbehaves.">
-  <link
-    href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,400;1,500&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500&family=DM+Mono:wght@400;500&display=swap"
-    rel="stylesheet">
-  <style>
-    :root {
-      --bg: #FAFAFA;
-      --ink: #111111;
-      --ink-light: #333333;
-      --muted: #777777;
-      --accent: #4A5D6B;
-      --accent-light: rgba(74, 93, 107, 0.12);
-      --accent-border: rgba(74, 93, 107, 0.3);
-      --border: rgba(0, 0, 0, 0.08);
-      --surface: #F3F3F1;
-      --code-bg: #111111;
-      --code-fg: #E8E4D8;
-      --green: #2d7a4f;
-      --green-bg: rgba(45, 122, 79, 0.07);
-      --red: #9b2424;
-      --red-bg: rgba(155, 36, 36, 0.07);
-      --yellow: #a07820;
-      --yellow-bg: rgba(180, 140, 0, 0.07);
-      --blue: #2060a0;
-      --blue-bg: rgba(32, 96, 160, 0.07);
-      --font-display: 'Cormorant Garamond', serif;
-      --font-body: 'DM Sans', sans-serif;
-      --font-mono: 'DM Mono', monospace;
-    }
-
-    *,
-    *::before,
-    *::after {
-      box-sizing: border-box;
-      margin: 0;
-      padding: 0;
-    }
-
-    html {
-      scroll-behavior: smooth;
-    }
-
-    body {
-      background: var(--bg);
-      color: var(--ink);
-      font-family: var(--font-body);
-      font-size: 17px;
-      line-height: 1.8;
-      -webkit-font-smoothing: antialiased;
-    }
-
-    /* ─── SITE HEADER ── */
-    .site-header {
-      background: var(--ink);
-      padding: 0 56px;
-      height: 52px;
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-    }
-
-    .site-wordmark {
-      font-family: var(--font-display);
-      font-style: italic;
-      font-size: 18px;
-      color: rgba(250, 250, 250, 0.9);
-      text-decoration: none;
-    }
-
-    .site-nav {
-      display: flex;
-      align-items: center;
-      gap: 28px;
-      font-size: 12px;
-      color: rgba(250, 250, 250, 0.35);
-      letter-spacing: 0.1em;
-      text-transform: uppercase;
-    }
-
-    .nav-sep {
-      width: 1px;
-      height: 14px;
-      background: rgba(255, 255, 255, 0.1);
-    }
-
-    /* ─── HERO ── */
-    .hero {
-      background: var(--ink);
-      padding: 80px 56px 0;
-      position: relative;
-      overflow: hidden;
-    }
-
-    .hero-grid {
-      max-width: 1100px;
-      margin: 0 auto;
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 72px;
-      align-items: center;
-      padding-bottom: 64px;
-      border-bottom: 1px solid rgba(255, 255, 255, 0.06);
-      position: relative;
-      z-index: 1;
-    }
-
-    .hero::after {
-      content: 'Runtime';
-      position: absolute;
-      bottom: -3vh;
-      right: -1vw;
-      font-family: var(--font-display);
-      font-size: 18vw;
-      font-weight: 600;
-      color: rgba(255, 255, 255, 0.025);
-      pointer-events: none;
-      line-height: 1;
-    }
-
-    .hero-eyebrow {
-      display: flex;
-      align-items: center;
-      gap: 10px;
-      margin-bottom: 22px;
-    }
-
-    .eyebrow-dot {
-      width: 7px;
-      height: 7px;
-      border-radius: 50%;
-      background: var(--accent);
-    }
-
-    .eyebrow-text {
-      font-size: 11px;
-      font-weight: 500;
-      letter-spacing: 0.2em;
-      text-transform: uppercase;
-      color: var(--accent);
-    }
-
-    .eyebrow-num {
-      margin-left: auto;
-      font-family: var(--font-mono);
-      font-size: 11px;
-      color: rgba(255, 255, 255, 0.2);
-    }
-
-    h1 {
-      font-family: var(--font-display);
-      font-size: clamp(30px, 4vw, 50px);
-      font-weight: 500;
-      line-height: 1.1;
-      color: #FAFAFA;
-      margin-bottom: 24px;
-      letter-spacing: -0.01em;
-    }
-
-    .h1-accent {
-      color: rgba(74, 93, 107, 0.8);
-      font-style: italic;
-    }
-
-    .hero-deck {
-      font-size: 16px;
-      font-weight: 300;
-      line-height: 1.72;
-      color: rgba(250, 250, 250, 0.45);
-    }
-
-    .layer-stack {
-      display: flex;
-      flex-direction: column;
-      gap: 2px;
-    }
-
-    .layer {
-      padding: 12px 18px;
-      border: 1px solid rgba(255, 255, 255, 0.06);
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 10px;
-      position: relative;
-      overflow: hidden;
-    }
-
-    .layer::before {
-      content: '';
-      position: absolute;
-      left: 0;
-      top: 0;
-      bottom: 0;
-      width: 3px;
-    }
-
-    .layer.done::before {
-      background: var(--accent);
-    }
-
-    .layer.done {
-      background: rgba(74, 93, 107, 0.08);
-      border-color: rgba(74, 93, 107, 0.2);
-    }
-
-    .layer.current::before {
-      background: rgba(255, 255, 255, 0.3);
-    }
-
-    .layer.current {
-      background: rgba(255, 255, 255, 0.04);
-      border-color: rgba(255, 255, 255, 0.1);
-    }
-
-    .layer-label {
-      font-family: var(--font-mono);
-      font-size: 11.5px;
-      color: rgba(255, 255, 255, 0.4);
-    }
-
-    .layer-status {
-      font-size: 10px;
-      font-weight: 500;
-      letter-spacing: 0.1em;
-      text-transform: uppercase;
-      padding: 2px 8px;
-      border-radius: 2px;
-    }
-
-    .layer.done .layer-status {
-      color: var(--accent);
-      background: rgba(74, 93, 107, 0.15);
-    }
-
-    .layer.current .layer-status {
-      color: rgba(255, 255, 255, 0.5);
-      background: rgba(255, 255, 255, 0.06);
-    }
-
-    /* ─── CONTENT ── */
-    .article {
-      max-width: 780px;
-      margin: 0 auto;
-      padding: 64px 56px 100px;
-    }
-
-    h2 {
-      font-family: var(--font-display);
-      font-size: 32px;
-      font-weight: 500;
-      line-height: 1.15;
-      color: var(--ink);
-      margin: 64px 0 18px;
-      letter-spacing: -0.01em;
-      position: relative;
-      padding-bottom: 14px;
-    }
-
-    h2::after {
-      content: '';
-      position: absolute;
-      bottom: 0;
-      left: 0;
-      width: 28px;
-      height: 2px;
-      background: var(--accent);
-    }
-
-    h2 .accent {
-      color: var(--accent);
-      font-style: italic;
-    }
-
-    h3 {
-      font-family: var(--font-body);
-      font-size: 11px;
-      font-weight: 500;
-      letter-spacing: 0.2em;
-      text-transform: uppercase;
-      color: var(--accent);
-      margin: 40px 0 12px;
-    }
-
-    p {
-      margin-bottom: 22px;
-      color: var(--ink-light);
-      line-height: 1.75;
-    }
-
-    strong {
-      color: var(--ink);
-      font-weight: 500;
-    }
-
-    em {
-      font-style: italic;
-    }
-
-    /* ─── CODE ── */
-    .code-block {
-      margin: 28px 0;
-      border: 1px solid rgba(0, 0, 0, 0.12);
-      overflow: hidden;
-    }
-
-    .code-header {
-      background: #1a1a1a;
-      padding: 9px 20px;
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      border-bottom: 1px solid rgba(255, 255, 255, 0.06);
-    }
-
-    .code-filename {
-      font-family: var(--font-mono);
-      font-size: 11px;
-      color: rgba(255, 255, 255, 0.35);
-    }
-
-    .code-lang {
-      font-family: var(--font-mono);
-      font-size: 10px;
-      color: var(--accent);
-      letter-spacing: 0.1em;
-      text-transform: uppercase;
-      background: rgba(74, 93, 107, 0.2);
-      padding: 2px 8px;
-      border-radius: 2px;
-    }
-
-    pre {
-      background: var(--code-bg);
-      color: var(--code-fg);
-      font-family: var(--font-mono);
-      font-size: 12.5px;
-      line-height: 1.74;
-      padding: 22px 24px;
-      overflow-x: auto;
-      margin: 0;
-    }
-
-    .k {
-      color: #7ba7be;
-    }
-
-    .v {
-      color: #85c4a0;
-    }
-
-    .s {
-      color: #d4b483;
-    }
-
-    .c {
-      color: #4a5060;
-      font-style: italic;
-    }
-
-    .w {
-      color: #c47a7a;
-    }
-
-    .g {
-      color: #85c4a0;
-    }
-
-    code {
-      font-family: var(--font-mono);
-      font-size: 0.83em;
-      background: var(--surface);
-      border: 1px solid var(--border);
-      color: var(--accent);
-      padding: 1px 6px;
-      border-radius: 3px;
-    }
-
-    /* ─── CALLOUTS ── */
-    .callout {
-      border: 1px solid;
-      padding: 18px 22px;
-      margin: 28px 0;
-      display: grid;
-      grid-template-columns: 20px 1fr;
-      gap: 12px;
-      align-items: start;
-    }
-
-    .callout.warn {
-      background: var(--red-bg);
-      border-color: rgba(155, 36, 36, 0.25);
-    }
-
-    .callout.info {
-      background: var(--blue-bg);
-      border-color: rgba(32, 96, 160, 0.2);
-    }
-
-    .callout.accent {
-      background: var(--accent-light);
-      border-color: var(--accent-border);
-    }
-
-    .callout.yellow {
-      background: var(--yellow-bg);
-      border-color: rgba(160, 120, 32, 0.25);
-    }
-
-    .c-icon {
-      font-size: 13px;
-      padding-top: 3px;
-    }
-
-    .c-head {
-      font-family: var(--font-mono);
-      font-size: 10px;
-      font-weight: 500;
-      letter-spacing: 0.15em;
-      text-transform: uppercase;
-      margin-bottom: 6px;
-      display: block;
-    }
-
-    .warn .c-head {
-      color: var(--red);
-    }
-
-    .info .c-head {
-      color: var(--blue);
-    }
-
-    .accent .c-head {
-      color: var(--accent);
-    }
-
-    .yellow .c-head {
-      color: var(--yellow);
-    }
-
-    .c-body {
-      font-size: 15px;
-      line-height: 1.65;
-      color: var(--ink-light);
-    }
-
-    .c-body strong {
-      color: var(--ink);
-    }
-
-    .c-body p {
-      margin: 0 0 6px;
-    }
-
-    .c-body p:last-child {
-      margin: 0;
-    }
-
-    /* ─── MATRIX ── */
-    .matrix {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 1px;
-      background: var(--border);
-      border: 1px solid var(--border);
-      margin: 28px 0;
-      overflow: hidden;
-    }
-
-    .matrix-cell {
-      background: var(--surface);
-      padding: 18px 20px;
-    }
-
-    .matrix-cell.header {
-      background: var(--ink);
-      font-family: var(--font-mono);
-      font-size: 10px;
-      font-weight: 500;
-      letter-spacing: 0.14em;
-      text-transform: uppercase;
-      color: rgba(250, 250, 250, 0.4);
-      padding: 10px 20px;
-    }
-
-    .cell-title {
-      font-weight: 500;
-      font-size: 14px;
-      color: var(--ink);
-      margin-bottom: 5px;
-    }
-
-    .cell-desc {
-      font-size: 13px;
-      color: var(--muted);
-      line-height: 1.5;
-    }
-
-    /* ─── THREAT TABLE ── */
-    .threat-grid {
-      border: 1px solid var(--border);
-      margin: 28px 0;
-      overflow: hidden;
-    }
-
-    .threat-row {
-      display: grid;
-      grid-template-columns: 200px 1fr 130px;
-      border-bottom: 1px solid var(--border);
-    }
-
-    .threat-row:last-child {
-      border-bottom: none;
-    }
-
-    .threat-row.head {
-      background: var(--ink);
-    }
-
-    .tr-cell {
-      padding: 12px 16px;
-      color: var(--ink-light);
-      font-size: 14px;
-      line-height: 1.5;
-    }
-
-    .tr-cell strong {
-      color: var(--ink);
-      font-weight: 500;
-    }
-
-    .head .tr-cell {
-      font-family: var(--font-mono);
-      font-size: 10px;
-      letter-spacing: 0.14em;
-      text-transform: uppercase;
-      color: rgba(250, 250, 250, 0.4);
-      padding: 10px 16px;
-    }
-
-    .threat-row:nth-child(odd):not(.head) {
-      background: var(--surface);
-    }
-
-    .badge {
-      display: inline-block;
-      font-family: var(--font-mono);
-      font-size: 10px;
-      font-weight: 500;
-      letter-spacing: 0.08em;
-      text-transform: uppercase;
-      padding: 2px 7px;
-      border-radius: 2px;
-      border: 1px solid;
-    }
-
-    .badge.prevent {
-      color: var(--green);
-      border-color: rgba(45, 122, 79, 0.3);
-      background: var(--green-bg);
-    }
-
-    .badge.detect {
-      color: var(--blue);
-      border-color: rgba(32, 96, 160, 0.25);
-      background: var(--blue-bg);
-    }
-
-    .badge.both {
-      color: var(--accent);
-      border-color: var(--accent-border);
-      background: var(--accent-light);
-    }
-
-    /* ─── BREAK ── */
-    .break {
-      text-align: center;
-      margin: 56px 0;
-      color: var(--muted);
-      letter-spacing: 0.3em;
-      font-size: 14px;
-    }
-
-    /* ─── CLOSING ── */
-    .closing {
-      background: var(--surface);
-      border-top: 1px solid var(--border);
-      padding: 56px;
-    }
-
-    .closing-inner {
-      max-width: 780px;
-      margin: 0 auto;
-    }
-
-    .closing h2 {
-      border: none;
-      padding: 0;
-      margin: 0 0 20px;
-      font-size: 28px;
-    }
-
-    .closing h2::after {
-      display: none;
-    }
-
-    .closing p {
-      font-size: 16px;
-      color: var(--ink-light);
-    }
-
-    .series-summary {
-      display: grid;
-      grid-template-columns: 1fr 1fr 1fr;
-      gap: 14px;
-      margin-top: 36px;
-    }
-
-    .summary-card {
-      background: var(--bg);
-      border: 1px solid var(--border);
-      padding: 18px 20px;
-    }
-
-    .summary-num {
-      font-family: var(--font-mono);
-      font-size: 10px;
-      color: var(--muted);
-      margin-bottom: 6px;
-      letter-spacing: 0.1em;
-    }
-
-    .summary-title {
-      font-family: var(--font-display);
-      font-size: 17px;
-      font-weight: 500;
-      color: var(--ink);
-      line-height: 1.3;
-      margin-bottom: 8px;
-    }
-
-    .summary-status {
-      display: flex;
-      align-items: center;
-      gap: 6px;
-      font-size: 11px;
-      color: var(--accent);
-      font-weight: 500;
-      letter-spacing: 0.1em;
-      text-transform: uppercase;
-    }
-
-    .summary-status::before {
-      content: '';
-      width: 5px;
-      height: 5px;
-      border-radius: 50%;
-      background: var(--accent);
-    }
-
-    /* ─── FOOTER ── */
-    .post-footer {
-      background: var(--ink);
-      padding: 32px 56px;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      flex-wrap: wrap;
-      gap: 16px;
-    }
-
-    .footer-back {
-      font-size: 13px;
-      color: rgba(255, 255, 255, 0.25);
-    }
-
-    .footer-center {
-      font-size: 12px;
-      color: rgba(255, 255, 255, 0.2);
-      letter-spacing: 0.1em;
-      text-transform: uppercase;
-    }
-
-    /* ─── TABLET ── */
-    @media (max-width: 900px) {
-
-      .site-header,
-      .hero,
-      .article,
-      .closing,
-      .post-footer {
-        padding-left: 28px;
-        padding-right: 28px;
-      }
-
-      .hero-grid {
-        grid-template-columns: 1fr;
-      }
-
-      .hero-right {
-        display: none;
-      }
-
-      .matrix,
-      .series-summary {
-        grid-template-columns: 1fr;
-      }
-
-      h1 {
-        font-size: clamp(28px, 5vw, 48px);
-      }
-
-      h2 {
-        font-size: 26px;
-      }
-
-      .closing {
-        padding-left: 28px;
-        padding-right: 28px;
-      }
-    }
-
-    /* ─── MOBILE (iPhone Pro ≤ 680px) ── */
-    @media (max-width: 680px) {
-
-      /* global padding */
-      .site-header,
-      .hero,
-      .article,
-      .closing,
-      .post-footer {
-        padding-left: 20px;
-        padding-right: 20px;
-      }
-
-      /* header */
-      .site-header {
-        height: 48px;
-      }
-
-      .site-nav .nav-sep {
-        display: none;
-      }
-
-      .site-nav span:last-child {
-        display: none;
-      }
-
-      /* hero */
-      .hero {
-        padding-top: 44px;
-        padding-bottom: 40px;
-      }
-
-      .hero-grid {
-        grid-template-columns: 1fr;
-      }
-
-      .hero-right {
-        display: none;
-      }
-
-      h1 {
-        font-size: clamp(24px, 8vw, 36px);
-        margin-bottom: 20px;
-      }
-
-      .hero-deck {
-        font-size: 16px;
-      }
-
-      .hero::after {
-        font-size: 36vw;
-      }
-
-      /* article */
-      .article {
-        padding-top: 36px;
-        padding-bottom: 72px;
-      }
-
-      h2 {
-        font-size: 22px;
-        margin: 40px 0 14px;
-      }
-
-      h3 {
-        margin: 26px 0 10px;
-      }
-
-      p {
-        font-size: 16px;
-        margin-bottom: 18px;
-      }
-
-      /* code blocks */
-      pre {
-        font-size: 11px;
-        line-height: 1.65;
-        padding: 14px 14px;
-      }
-
-      .code-header {
-        padding: 8px 14px;
-      }
-
-      .code-filename {
-        font-size: 10px;
-        max-width: 60%;
-        white-space: nowrap;
-        overflow: hidden;
-        text-overflow: ellipsis;
-      }
-
-      /* callouts */
-      .callout {
-        padding: 14px 16px;
-        gap: 10px;
-      }
-
-      .c-body {
-        font-size: 14px;
-      }
-
-      /* matrix & series summary */
-      .matrix,
-      .series-summary {
-        grid-template-columns: 1fr;
-      }
-
-      /* threat grid — stack columns */
-      .threat-row {
-        grid-template-columns: 1fr;
-      }
-
-      .threat-row .tr-cell:not(:last-child) {
-        border-bottom: 1px solid var(--border);
-      }
-
-      /* closing */
-      .closing {
-        padding-top: 36px;
-        padding-bottom: 48px;
-      }
-
-      /* footer */
-      .post-footer {
-        flex-direction: column;
-        align-items: flex-start;
-        gap: 10px;
-        padding-top: 22px;
-        padding-bottom: 22px;
-      }
-
-      .footer-center {
-        display: none;
-      }
-    }
-  </style>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="description" content="What happens after a pod starts: how to constrain what it can do, how to isolate what it can reach, and how to detect when it misbehaves.">
+<title>Workload Security: Pod Constraints, Network Isolation, and Runtime Threat Detection</title>
+<style>
+/* ============================================================
+   Vineet Chaudhary — shared stylesheet
+   Pure HTML/CSS, minimal. Used by index.html + all blog pages.
+   ============================================================ */
+
+:root {
+  --ink: #111;
+  --muted: #828282;
+  --link: #1772d0;
+  --rule: #e2e2e2;
+  --code-bg: #f6f7f9;
+  --note-bg: #f3f7fc;
+  --warn-bg: #fcf6ee;
+  --warn-bar: #d99a26;
+}
+
+* { box-sizing: border-box; }
+
+html { -webkit-text-size-adjust: 100%; }
+
+body {
+  font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+  font-size: 16px;
+  line-height: 1.6;
+  color: var(--ink);
+  background: #fff;
+  max-width: 760px;
+  margin: 42px auto 100px;
+  padding: 0 22px;
+}
+
+a { color: var(--link); text-decoration: none; }
+a:hover { text-decoration: underline; }
+p { margin: 0 0 15px; }
+
+hr {
+  border: 0;
+  border-top: 1px solid var(--rule);
+  margin: 28px 0 32px;
+}
+
+/* ---------- header (index) ---------- */
+header.site { text-align: center; margin-bottom: 8px; }
+header.site h1 {
+  font-size: 31px; font-weight: 700; letter-spacing: -0.5px; margin: 0 0 4px;
+}
+header.site h2 {
+  font-size: 17px; font-weight: 400; color: var(--muted); margin: 0 0 16px;
+}
+.social { display: flex; justify-content: center; gap: 18px; align-items: center; }
+.social a { display: inline-flex; color: #555; }
+.social a:hover { color: #000; text-decoration: none; }
+.social svg { width: 20px; height: 20px; fill: currentColor; display: block; }
+
+/* ---------- lowercase section labels ---------- */
+h3.section {
+  font-size: 15px; font-weight: 700; text-transform: lowercase;
+  letter-spacing: 0.3px; margin: 46px 0 18px;
+}
+
+/* ---------- timeline rows (index) ---------- */
+.row { display: flex; margin-bottom: 26px; }
+.row .date { flex: 0 0 96px; color: var(--muted); font-size: 14px; padding-top: 2px; }
+.row .body { flex: 1; min-width: 0; }
+.row .body .role { font-weight: 700; margin: 0 0 2px; }
+.row .body .org { color: var(--muted); font-size: 14px; margin: 0 0 7px; }
+.tags { color: var(--muted); font-size: 13px; margin-top: 7px; }
+
+/* ---------- capabilities (index) ---------- */
+.cap { margin-bottom: 16px; }
+.cap .name { font-weight: 700; margin: 0 0 2px; }
+.cap p { margin: 0; color: #333; }
+
+/* ---------- writing list (index) ---------- */
+.post { margin-bottom: 18px; }
+.post .meta { color: var(--muted); font-size: 13px; }
+.post .title { font-weight: 700; }
+.post p { margin: 2px 0 0; color: #333; font-size: 15px; }
+
+.certs div, .langs div { margin-bottom: 3px; color: #333; }
+
+/* ============================================================
+   BLOG / ARTICLE STYLES
+   ============================================================ */
+
+.blog-nav {
+  display: flex; justify-content: space-between; align-items: baseline;
+  font-size: 14px; margin-bottom: 30px; gap: 12px; flex-wrap: wrap;
+}
+.blog-nav .series { color: var(--muted); }
+
+article h1.title {
+  font-size: 30px; font-weight: 700; line-height: 1.25;
+  letter-spacing: -0.5px; margin: 0 0 10px;
+}
+article h1.title em { font-style: italic; font-weight: 700; }
+.byline { color: var(--muted); font-size: 14px; margin: 0 0 26px; }
+.lede { font-size: 18px; line-height: 1.55; color: #2a2a2a; margin: 0 0 28px; }
+
+article h2 {
+  font-size: 22px; font-weight: 700; letter-spacing: -0.3px;
+  margin: 40px 0 14px; line-height: 1.3;
+}
+article h3 { font-size: 17px; font-weight: 700; margin: 28px 0 10px; }
+article h4 { font-size: 15px; font-weight: 700; margin: 20px 0 8px; }
+
+.eyebrow {
+  font-size: 12px; font-weight: 700; letter-spacing: 1px;
+  text-transform: uppercase; color: var(--muted);
+  margin: 40px 0 -4px;
+}
+
+ul, ol { padding-left: 22px; margin: 0 0 15px; }
+li { margin-bottom: 6px; }
+
+/* inline code + code blocks */
+code {
+  font-family: "SF Mono", Menlo, Consolas, monospace;
+  font-size: 0.86em; background: var(--code-bg);
+  padding: 1px 5px; border-radius: 3px;
+}
+.code-label {
+  font-family: "SF Mono", Menlo, Consolas, monospace;
+  font-size: 12px; color: var(--muted); margin: 22px 0 0;
+}
+pre {
+  background: var(--code-bg); border: 1px solid var(--rule);
+  border-radius: 6px; padding: 16px 18px; overflow-x: auto;
+  margin: 6px 0 20px; line-height: 1.5;
+}
+pre code {
+  background: none; padding: 0; font-size: 13px; color: #1f1f1f;
+}
+
+/* tables */
+table {
+  width: 100%; border-collapse: collapse; font-size: 14px;
+  margin: 8px 0 24px;
+}
+th, td { text-align: left; padding: 8px 12px; border-bottom: 1px solid var(--rule); }
+th { font-weight: 700; border-bottom: 2px solid #ccc; }
+td code { font-size: 12px; }
+
+/* callouts */
+.callout {
+  background: var(--note-bg); border-left: 3px solid var(--link);
+  padding: 13px 16px; margin: 20px 0; border-radius: 0 5px 5px 0;
+  font-size: 15px;
+}
+.callout.warn { background: var(--warn-bg); border-left-color: var(--warn-bar); }
+.callout .ctitle { font-weight: 700; display: block; margin-bottom: 3px; }
+.callout p { margin: 0; }
+
+/* flow diagrams */
+.flow {
+  display: flex; flex-wrap: wrap; align-items: stretch; gap: 10px;
+  margin: 8px 0 26px; padding: 18px; border: 1px solid var(--rule);
+  border-radius: 8px; background: #fafafa;
+}
+.flow .cap-title { flex-basis: 100%; font-size: 13px; color: var(--muted); margin-bottom: 4px; }
+.flow .node {
+  flex: 1; min-width: 110px; text-align: center; background: #fff;
+  border: 1px solid var(--rule); border-radius: 6px; padding: 12px 10px;
+  font-size: 13px;
+}
+.flow .node .ico { font-size: 20px; display: block; margin-bottom: 5px; }
+.flow .node strong { display: block; font-size: 13px; margin-bottom: 2px; }
+.flow .node span.sub { color: var(--muted); font-size: 12px; }
+.flow .arrow { display: flex; align-items: center; color: var(--muted); font-size: 18px; }
+
+/* stat row */
+.stats {
+  display: flex; flex-wrap: wrap; gap: 26px; margin: 8px 0 28px;
+  padding: 18px; border: 1px solid var(--rule); border-radius: 8px;
+}
+.stats .stat { flex: 1; min-width: 120px; }
+.stats .num { font-size: 26px; font-weight: 700; letter-spacing: -0.5px; }
+.stats .lbl { color: var(--muted); font-size: 13px; margin-top: 2px; }
+
+/* simple metric bars (results) */
+.bar { display: flex; align-items: center; gap: 10px; margin: 6px 0; font-size: 14px; }
+.bar .bl { flex: 0 0 170px; }
+.bar .bt { flex: 1; height: 8px; background: #eee; border-radius: 4px; overflow: hidden; }
+.bar .bf { height: 100%; background: var(--link); }
+.bar .bv { flex: 0 0 56px; text-align: right; font-weight: 700; }
+
+/* post footer nav */
+.post-footer {
+  display: flex; justify-content: space-between; gap: 16px;
+  margin-top: 48px; padding-top: 20px; border-top: 1px solid var(--rule);
+  font-size: 14px; flex-wrap: wrap;
+}
+.refs { font-size: 13px; color: #444; margin-top: 30px; }
+.refs li { margin-bottom: 8px; }
+
+@media (max-width: 540px) {
+  .row { flex-direction: column; }
+  .row .date { margin-bottom: 4px; }
+  .flow .arrow { display: none; }
+}
+
+</style>
 </head>
-
 <body>
 
-  <header class="site-header">
-    <a href="index.html" class="site-wordmark">Vineet Chaudhary</a>
-    <nav class="site-nav">
-      <span>CloudNative Security</span>
-      <div class="nav-sep"></div>
-      <span>Post 3 of 3 — Final</span>
-    </nav>
-  </header>
+<nav class="blog-nav">
+  <a href="index.html">&larr; Vineet Chaudhary</a>
+  <span class="series">CloudNative Security &middot; Post 3 of 3 &mdash; Final</span>
+</nav>
 
-  <div class="hero">
-    <div class="hero-grid">
-      <div class="hero-left">
-        <div class="hero-eyebrow">
-          <div class="eyebrow-dot"></div>
-          <span class="eyebrow-text">Workload &amp; Runtime Security</span>
-          <span class="eyebrow-num">Post 3 / 3</span>
-        </div>
-        <h1>Workload Security:<br><span class="h1-accent">Pod Constraints,</span><br>Network Isolation,<br>&amp; Runtime
-          Detection</h1>
-        <p class="hero-deck">
-          Everything we've covered — image scanning, RBAC, control plane hardening — operates before or during
-          admission. This post covers what happens after a pod starts: how to constrain what it can do, how to isolate
-          what it can reach, and how to detect when it does something it shouldn't.
-        </p>
-      </div>
-      <div class="hero-right">
-        <div class="layer-stack">
-          <div class="layer done"><span class="layer-label">01 / Image &amp; Supply Chain</span><span
-              class="layer-status">Covered</span></div>
-          <div class="layer done"><span class="layer-label">02 / RBAC &amp; Control Plane</span><span
-              class="layer-status">Covered</span></div>
-          <div class="layer current"><span class="layer-label">03 / Workload &amp; Runtime</span><span
-              class="layer-status">This Post</span></div>
-          <div class="layer current"><span class="layer-label">├── Pod Security Contexts</span><span
-              class="layer-status">→</span></div>
-          <div class="layer current"><span class="layer-label">├── Network Policies</span><span
-              class="layer-status">→</span></div>
-          <div class="layer current"><span class="layer-label">├── Seccomp / AppArmor</span><span
-              class="layer-status">→</span></div>
-          <div class="layer current"><span class="layer-label">└── Runtime Detection</span><span
-              class="layer-status">→</span></div>
-        </div>
-      </div>
-    </div>
-  </div>
+<article>
+<p class="eyebrow">Workload &amp; Runtime Security &middot; Kubernetes Hardening Series</p>
+<h1 class="title">Workload Security: <em>Pod Constraints, Network Isolation,</em> &amp; Runtime Detection</h1>
+<p class="byline">April 2025 &middot; Final post</p>
 
-  <div class="article">
+<p class="lede">Everything we've covered &mdash; image scanning, RBAC, control plane hardening &mdash; operates before or during admission. This post covers what happens after a pod starts: how to constrain what it can do, how to isolate what it can reach, and how to detect when it does something it shouldn't.</p>
 
-    <p>There's a thought experiment worth running when you onboard a new workload: if an attacker were to achieve
-      arbitrary code execution inside this container — through an application-layer vulnerability — what's the blast
-      radius? What can they access? What can they do to other services? Where can they go from here?</p>
+<div class="flow">
+  <span class="cap-title">Where this post sits</span>
+  <div class="node"><strong>01 / Image &amp; Supply Chain</strong><span class="sub">Covered</span></div>
+  <div class="arrow">&rarr;</div>
+  <div class="node"><strong>02 / RBAC &amp; Control Plane</strong><span class="sub">Covered</span></div>
+  <div class="arrow">&rarr;</div>
+  <div class="node"><strong>03 / Workload &amp; Runtime</strong><span class="sub">This post</span></div>
+</div>
 
-    <p>The controls in this post are how you make that blast radius small.</p>
+<p>There's a thought experiment worth running when you onboard a new workload: if an attacker were to achieve arbitrary code execution inside this container &mdash; through an application-layer vulnerability &mdash; what's the blast radius? What can they access? What can they do to other services? Where can they go from here?</p>
+<p>The controls in this post are how you make that blast radius small.</p>
 
-    <h2>Security Contexts: <span class="accent">Constraining What the Container Can Do</span></h2>
+<h2>Security Contexts: Constraining What the Container Can Do</h2>
+<p>A Security Context is the per-pod, per-container declaration of the security posture Kubernetes will enforce. If you're running containers without Security Contexts, you're running with defaults &mdash; and the defaults are not conservative.</p>
 
-    <p>A Security Context is the per-pod, per-container declaration of the security posture Kubernetes will enforce. If
-      you're running containers without Security Contexts, you're running with defaults — and the defaults are not
-      conservative.</p>
+<p class="code-label">pod-security-context-production.yaml &middot; YAML</p>
+<pre><code>apiVersion: v1
+kind: Pod
+spec:
+  # Pod-level: applies to all containers
+  securityContext:
+    runAsUser:          10001
+    runAsGroup:         10001
+    runAsNonRoot:       true
+    seccompProfile:
+      type: RuntimeDefault
 
-    <div class="code-block">
-      <div class="code-header">
-        <span class="code-filename">pod-security-context-production.yaml</span>
-        <span class="code-lang">YAML</span>
-      </div>
-      <pre><span class="k">apiVersion:</span> <span class="s">v1</span>
-<span class="k">kind:</span> <span class="s">Pod</span>
-<span class="k">spec:</span>
-  <span class="c"># Pod-level: applies to all containers</span>
-  <span class="k">securityContext:</span>
-    <span class="k">runAsUser:</span>          <span class="v">10001</span>
-    <span class="k">runAsGroup:</span>         <span class="v">10001</span>
-    <span class="k">runAsNonRoot:</span>       <span class="g">true</span>
-    <span class="k">seccompProfile:</span>
-      <span class="k">type:</span> <span class="s">RuntimeDefault</span>
+  containers:
+  - name: api
+    securityContext:
+      allowPrivilegeEscalation: false
+      readOnlyRootFilesystem:   true
+      capabilities:
+        drop:
+        - ALL  # Drop everything first, add back only if needed</code></pre>
 
-  <span class="k">containers:</span>
-  <span class="k">- name:</span> <span class="s">api</span>
-    <span class="k">securityContext:</span>
-      <span class="k">allowPrivilegeEscalation:</span> <span class="w">false</span>
-      <span class="k">readOnlyRootFilesystem:</span>   <span class="g">true</span>
-      <span class="k">capabilities:</span>
-        <span class="k">drop:</span>
-        <span class="k">- ALL</span>  <span class="c"># Drop everything first, add back only if needed</span></pre>
-    </div>
+<p>The <code>readOnlyRootFilesystem: true</code> setting deserves emphasis. If an attacker achieves code execution in the container, they cannot modify binaries, write a persistence mechanism, or drop a payload to disk. Everything they do is ephemeral &mdash; when the container restarts, their changes are gone.</p>
 
-    <p>The <code>readOnlyRootFilesystem: true</code> setting deserves emphasis. If an attacker achieves code execution
-      in the container, they cannot modify binaries, write a persistence mechanism, or drop a payload to disk.
-      Everything they do is ephemeral — when the container restarts, their changes are gone.</p>
+<div class="callout warn">
+  <span class="ctitle">The capability drop gotcha</span>
+  <p>Dropping ALL capabilities and then adding back what's needed is the correct order. Many engineers leave the default set intact and add additional capabilities. The default set includes NET_RAW, CHOWN, AUDIT_WRITE, and others that most applications have no business using. Always drop ALL, then add back the minimum required set explicitly.</p>
+</div>
 
-    <div class="callout warn">
-      <span class="c-icon">⚠</span>
-      <div class="c-body">
-        <span class="c-head">The capability drop gotcha</span>
-        <p><strong>Dropping ALL capabilities and then adding back what's needed is the correct order.</strong> Many
-          engineers leave the default set intact and add additional capabilities. The default set includes NET_RAW,
-          CHOWN, AUDIT_WRITE, and others that most applications have no business using. Always drop ALL, then add back
-          the minimum required set explicitly.</p>
-      </div>
-    </div>
+<h3>Admission enforcement: Pod Security Admission</h3>
+<p>Defining Security Contexts in individual pod specs is insufficient &mdash; developers will forget them. The enforcement layer is a cluster-level policy that rejects non-compliant pod specs at admission time. PSA applies automatically based on namespace labels:</p>
 
-    <h3>Admission enforcement: Pod Security Admission</h3>
+<p class="code-label">namespace-psa-enforcement.yaml &middot; YAML</p>
+<pre><code>apiVersion: v1
+kind: Namespace
+metadata:
+  name: payments
+  labels:
+    # Enforce: reject non-compliant pods at admission
+    pod-security.kubernetes.io/enforce:         restricted
+    pod-security.kubernetes.io/enforce-version:  latest
+    # Audit without rejecting (useful for legacy migration)
+    pod-security.kubernetes.io/audit:           restricted</code></pre>
 
-    <p>Defining Security Contexts in individual pod specs is insufficient — developers will forget them. The enforcement
-      layer is a cluster-level policy that rejects non-compliant pod specs at admission time. PSA applies automatically
-      based on namespace labels:</p>
+<h2>Network Policies: The Firewall You Own</h2>
+<p>In a default cluster &mdash; no network policies applied &mdash; every pod can reach every other pod, across namespaces, regardless of what they are. A compromised frontend can reach your database. Network policies change this by imposing explicit, label-based allow rules. Traffic not explicitly allowed is implicitly denied &mdash; once you apply a policy.</p>
 
-    <div class="code-block">
-      <div class="code-header">
-        <span class="code-filename">namespace-psa-enforcement.yaml</span>
-        <span class="code-lang">YAML</span>
-      </div>
-      <pre><span class="k">apiVersion:</span> <span class="s">v1</span>
-<span class="k">kind:</span> <span class="s">Namespace</span>
-<span class="k">metadata:</span>
-  <span class="k">name:</span> <span class="s">payments</span>
-  <span class="k">labels:</span>
-    <span class="c"># Enforce: reject non-compliant pods at admission</span>
-    <span class="k">pod-security.kubernetes.io/enforce:</span>         <span class="v">restricted</span>
-    <span class="k">pod-security.kubernetes.io/enforce-version:</span>  <span class="v">latest</span>
-    <span class="c"># Audit without rejecting (useful for legacy migration)</span>
-    <span class="k">pod-security.kubernetes.io/audit:</span>           <span class="v">restricted</span></pre>
-    </div>
-
-    <div class="break">· · ·</div>
-
-    <h2>Network Policies: <span class="accent">The Firewall You Own</span></h2>
-
-    <p>In a default cluster — no network policies applied — every pod can reach every other pod in the cluster, across
-      namespaces, regardless of what they are. A compromised frontend can reach your database. Network policies change
-      this by imposing explicit, label-based allow rules. Traffic not explicitly allowed is implicitly denied — once you
-      apply a policy.</p>
-
-    <div class="code-block">
-      <div class="code-header">
-        <span class="code-filename">network-policy-payments-namespace.yaml</span>
-        <span class="code-lang">YAML</span>
-      </div>
-      <pre><span class="c"># Step 1: Default deny all in namespace</span>
-<span class="k">apiVersion:</span> <span class="s">networking.k8s.io/v1</span>
-<span class="k">kind:</span> <span class="s">NetworkPolicy</span>
-<span class="k">metadata:</span>
-  <span class="k">name:</span> <span class="s">default-deny-all</span>
-  <span class="k">namespace:</span> <span class="s">payments</span>
-<span class="k">spec:</span>
-  <span class="k">podSelector:</span> {}   <span class="c"># Matches all pods</span>
-  <span class="k">policyTypes:</span> <span class="s">[Ingress, Egress]</span>
-<span class="c"># No rules = deny all</span>
+<p class="code-label">network-policy-payments-namespace.yaml &middot; YAML</p>
+<pre><code># Step 1: Default deny all in namespace
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: default-deny-all
+  namespace: payments
+spec:
+  podSelector: {}   # Matches all pods
+  policyTypes: [Ingress, Egress]
+# No rules = deny all
 
 ---
-<span class="c"># Step 2: Allow API to reach Postgres only</span>
-<span class="k">spec:</span>
-  <span class="k">podSelector:</span>
-    <span class="k">matchLabels:</span>
-      <span class="k">app:</span> <span class="s">postgres</span>
-  <span class="k">policyTypes:</span> <span class="s">[Ingress]</span>
-  <span class="k">ingress:</span>
-  <span class="k">- from:</span>
-    <span class="k">- podSelector:</span>
-        <span class="k">matchLabels:</span>
-          <span class="k">app:</span> <span class="s">api-server</span>
-    <span class="k">ports:</span>
-    <span class="k">- protocol:</span> <span class="s">TCP</span>
-      <span class="k">port:</span> <span class="v">5432</span></pre>
-    </div>
+# Step 2: Allow API to reach Postgres only
+spec:
+  podSelector:
+    matchLabels:
+      app: postgres
+  policyTypes: [Ingress]
+  ingress:
+  - from:
+    - podSelector:
+        matchLabels:
+          app: api-server
+    ports:
+    - protocol: TCP
+      port: 5432</code></pre>
 
-    <div class="callout accent">
-      <span class="c-icon">◈</span>
-      <div class="c-body">
-        <span class="c-head">CNI Support is Required</span>
-        <p><strong>NetworkPolicy resources are only enforced if your CNI plugin supports them.</strong> Flannel does
-          not. Calico, Cilium, and Weave Net do. Create a NetworkPolicy, then verify enforcement by attempting a blocked
-          connection from inside the cluster. If it succeeds, your CNI is silently ignoring the policy.</p>
-      </div>
-    </div>
+<div class="callout">
+  <span class="ctitle">CNI support is required</span>
+  <p>NetworkPolicy resources are only enforced if your CNI plugin supports them. Flannel does not. Calico, Cilium, and Weave Net do. Create a NetworkPolicy, then verify enforcement by attempting a blocked connection from inside the cluster. If it succeeds, your CNI is silently ignoring the policy.</p>
+</div>
 
-    <div class="break">· · ·</div>
+<h2>Runtime Detection: Catching What Prevention Misses</h2>
+<p>Runtime detection is what we add when we accept that prevention is imperfect. It answers: <em>when something gets through, how quickly do we know?</em></p>
 
-    <h2>Runtime Detection: <span class="accent">Catching What Prevention Misses</span></h2>
+<table>
+<thead><tr><th>Scenario</th><th>Detection layer</th><th>Handled by</th></tr></thead>
+<tbody>
+<tr><td>CVE exploited in running container</td><td>Unexpected syscall pattern</td><td>Runtime detection</td></tr>
+<tr><td>Shell spawned inside production pod</td><td>execve() of bash/sh</td><td>Runtime detection</td></tr>
+<tr><td>Container escape attempt</td><td>setns() / mount() in container</td><td>Seccomp block</td></tr>
+<tr><td>Cryptojacker post-deploy</td><td>Unexpected CPU, mining-pool conn</td><td>Runtime detection</td></tr>
+<tr><td>Credential stuffing from pod</td><td>Unusual outbound to external IPs</td><td>Network + detection</td></tr>
+</tbody>
+</table>
 
-    <p>Runtime detection is what we add when we accept that prevention is imperfect. It answers: <em>when something gets
-        through, how quickly do we know?</em></p>
+<h3>Behavioral detection rules &mdash; context is everything</h3>
+<p>Effective runtime detection rules need to be contextually aware &mdash; not just "was this syscall called?" but "was it called by this process, in this container image, in this namespace, at this time?" Rules that lack context generate noise. Rules that have context generate signal.</p>
 
-    <div class="threat-grid">
-      <div class="threat-row head">
-        <div class="tr-cell">Scenario</div>
-        <div class="tr-cell">Detection Layer</div>
-        <div class="tr-cell">Handled By</div>
-      </div>
-      <div class="threat-row">
-        <div class="tr-cell"><strong>CVE exploited in running container</strong></div>
-        <div class="tr-cell">Unexpected syscall pattern</div>
-        <div class="tr-cell"><span class="badge detect">Runtime Detection</span></div>
-      </div>
-      <div class="threat-row">
-        <div class="tr-cell"><strong>Shell spawned inside production pod</strong></div>
-        <div class="tr-cell">execve() of bash/sh in container</div>
-        <div class="tr-cell"><span class="badge detect">Runtime Detection</span></div>
-      </div>
-      <div class="threat-row">
-        <div class="tr-cell"><strong>Container escape attempt</strong></div>
-        <div class="tr-cell">setns() / mount() in container context</div>
-        <div class="tr-cell"><span class="badge prevent">Seccomp Block</span></div>
-      </div>
-      <div class="threat-row">
-        <div class="tr-cell"><strong>Cryptojacker post-deploy</strong></div>
-        <div class="tr-cell">Unexpected CPU load, mining pool conn</div>
-        <div class="tr-cell"><span class="badge detect">Runtime Detection</span></div>
-      </div>
-      <div class="threat-row">
-        <div class="tr-cell"><strong>Credential stuffing from pod</strong></div>
-        <div class="tr-cell">Unusual outbound to external IPs</div>
-        <div class="tr-cell"><span class="badge both">Network + Detection</span></div>
-      </div>
-    </div>
-
-    <h3>Behavioral detection rules — context is everything</h3>
-
-    <p>Effective runtime detection rules need to be contextually aware — not just "was this syscall called?" but "was it
-      called by this process, in this container image, in this Kubernetes namespace, at this time?" Rules that lack
-      context generate noise. Rules that have context generate signal.</p>
-
-    <div class="code-block">
-      <div class="code-header">
-        <span class="code-filename">behavioral-detection-rules.yaml</span>
-        <span class="code-lang">Falco Syntax</span>
-      </div>
-      <pre><span class="c"># Rule: shell spawned inside container (high signal for api services)</span>
-<span class="k">- rule:</span> <span class="s">Shell execution in container</span>
-  <span class="k">condition:</span> <span class="v">|</span>
+<p class="code-label">behavioral-detection-rules.yaml &middot; Falco syntax</p>
+<pre><code># Rule: shell spawned inside container (high signal for api services)
+- rule: Shell execution in container
+  condition: |
     evt.type = execve
     and container.id != host
     and proc.name in (bash, sh, zsh, dash)
     and not container.image.repository in (known_debug_images)
-  <span class="k">output:</span> <span class="v">|</span>
+  output: |
     Shell spawned: user=%user.name container=%container.name
     image=%container.image.repository cmd=%proc.cmdline
     ns=%k8s.ns.name pod=%k8s.pod.name
-  <span class="k">priority:</span> <span class="w">WARNING</span>
+  priority: WARNING
 
 ---
-<span class="c"># Rule: unexpected outbound from database pod</span>
-<span class="k">- rule:</span> <span class="s">Unexpected outbound from database</span>
-  <span class="k">condition:</span> <span class="v">|</span>
+# Rule: unexpected outbound from database pod
+- rule: Unexpected outbound from database
+  condition: |
     evt.type = connect
     and container.label[tier] = database
     and not fd.sip in (allowed_cluster_ips)
-  <span class="k">priority:</span> <span class="w">ERROR</span></pre>
-    </div>
+  priority: ERROR</code></pre>
 
-    <h3>Automated response: closing the loop</h3>
+<h3>Automated response: closing the loop</h3>
+<p>A detection that fires an alert and waits for a human has a response time measured in minutes to hours. Closing the loop means wiring detection events to automated response playbooks.</p>
 
-    <p>A detection that fires an alert and waits for a human to respond has a response time measured in minutes to
-      hours. Closing the loop means wiring detection events to automated response playbooks.</p>
+<table>
+<thead><tr><th>Trigger event</th><th>Automated response</th></tr></thead>
+<tbody>
+<tr><td>Shell spawned in production pod</td><td>Capture forensic state &rarr; cordon pod &rarr; page on-call with snapshot</td></tr>
+<tr><td><code>kubectl exec</code> outside business hours</td><td>Alert security channel &rarr; revoke SA token if not acknowledged in 5 min</td></tr>
+<tr><td>Outbound to known C2 IP</td><td>Patch NetworkPolicy to isolate pod &rarr; page on-call as P0</td></tr>
+<tr><td>Privilege escalation syscall</td><td>Kill pod &rarr; capture image digest &rarr; block image in registry</td></tr>
+</tbody>
+</table>
 
-    <div class="matrix">
-      <div class="matrix-cell header">Trigger Event</div>
-      <div class="matrix-cell header">Automated Response</div>
-      <div class="matrix-cell">
-        <div class="cell-title">Shell spawned in production pod</div>
-        <div class="cell-desc">Capture forensic state → Cordon pod → Page on-call with container snapshot</div>
-      </div>
-      <div class="matrix-cell">
-        <div class="cell-title"><code>kubectl exec</code> outside business hours</div>
-        <div class="cell-desc">Alert security channel → Revoke SA token if not acknowledged in 5 min</div>
-      </div>
-      <div class="matrix-cell">
-        <div class="cell-title">Outbound to known C2 IP</div>
-        <div class="cell-desc">Patch NetworkPolicy to isolate pod → Page on-call as P0</div>
-      </div>
-      <div class="matrix-cell">
-        <div class="cell-title">Privilege escalation syscall</div>
-        <div class="cell-desc">Kill pod → Capture image digest → Block image in registry</div>
-      </div>
-    </div>
+<div class="callout warn">
+  <span class="ctitle">On false positives</span>
+  <p>Automated response is only safe when your detection rules are well-tuned. A false positive that kills a production pod is its own incident. Run new rules in observe-only mode for at least two weeks before enabling automated response. Track false-positive rate explicitly.</p>
+</div>
 
-    <div class="callout yellow">
-      <span class="c-icon">◑</span>
-      <div class="c-body">
-        <span class="c-head">On False Positives</span>
-        <p><strong>Automated response is only safe when your detection rules are well-tuned.</strong> A false positive
-          that kills a production pod is its own incident. Run new rules in observe-only mode for at least two weeks
-          before enabling automated response. Track false positive rate explicitly.</p>
-      </div>
-    </div>
+<p>Each layer of this series addresses a different part of the threat model &mdash; they're not redundant, they're complementary. An attacker who bypasses image scanning still faces RBAC. An attacker who escalates to cluster-admin still has a container with a read-only filesystem. An attacker who escapes the container trips a behavioral rule before they can move laterally. No single layer is the answer. The answer is the stack.</p>
 
-    <p>Each layer of this series addresses a different part of the threat model — they're not redundant, they're
-      complementary. An attacker who bypasses image scanning still faces RBAC. An attacker who escalates to
-      cluster-admin still has a container with a read-only filesystem. An attacker who escapes the container trips a
-      behavioral rule before they can move laterally. No single layer is the answer. The answer is the stack.</p>
-
-  </div>
-
-
-  <div class="post-footer">
-    <a href="blog-02-rbac-controlplane.html"><span class="footer-back">← Post 2: RBAC &amp; Control Plane
-        Hardening</span></a>
-    <span class="footer-center">CloudNative Security</span>
-  </div>
+<div class="post-footer">
+  <a href="blog-02-rbac-controlplane.html">&larr; Post 2: RBAC &amp; Control Plane Hardening</a>
+  <a href="index.html">All writing &rarr;</a>
+</div>
+</article>
 
 </body>
-
 </html>
